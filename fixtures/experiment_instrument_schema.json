@@ -1,0 +1,68 @@
+[
+  {
+    "pk": 4,
+    "model": "tardis_portal.schema",
+    "fields":
+    {
+      "name": "Experiment Instrument",
+      "namespace": "http://tardis.edu.au/schemas/experimentInstrument",
+      "subtype": "",
+      "hidden": false,
+      "type": 1,
+      "immutable": false
+    }
+  },
+
+  {
+    "pk": null,
+    "model": "tardis_portal.parametername",
+    "fields":
+    {
+      "name": "date",
+      "data_type": 2,
+      "is_searchable": true,
+      "choices": "",
+      "comparison_type": 1,
+      "full_name": "Date",
+      "units": "",
+      "order": 9999,
+      "immutable": false,
+      "schema": 4
+    }
+  }, 
+
+  {
+    "pk": null,
+    "model": "tardis_portal.parametername",
+    "fields":
+    {
+      "name": "instrument",
+      "data_type": 2,
+      "is_searchable": true,
+      "choices": "",
+      "comparison_type": 1,
+      "full_name": "Instrument",
+      "units": "",
+      "order": 9999,
+      "immutable": false,
+      "schema": 4
+    }
+  }, 
+
+  {
+    "pk": null,
+    "model": "tardis_portal.parametername",
+    "fields":
+    {
+      "name": "owner",
+      "data_type": 2,
+      "is_searchable": true,
+      "choices": "",
+      "comparison_type": 1,
+      "full_name": "Owner",
+      "units": "", "order": 9999,
+      "immutable": false,
+      "schema": 4
+    }
+  }, 
+]
