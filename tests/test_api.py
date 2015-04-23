@@ -77,9 +77,9 @@ class UploaderAppResourceTest(MyTardisResourceTestCase):
         expected_output = {
             "id": 1,
             "interface": "Ethernet",
-            "mac_address": "ABCDEFG!",
+            "mac_address": "ABCDEFG",
         }
-        output = self.api_client.get('/api/v1/uploader/1/',
+        output = self.api_client.get('/api/v1/mydata_uploader/1/',
                                      authentication=self.get_credentials())
         returned_data = json.loads(output.content)
         for key, value in expected_output.iteritems():
