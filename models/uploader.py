@@ -67,40 +67,40 @@ class Uploader(models.Model):
                                related_name="uploaders",
                                blank=True, null=True)
 
-    user_agent_name = models.CharField(max_length=64)
-    user_agent_version = models.CharField(max_length=32)
-    user_agent_install_location = models.CharField(max_length=128)
+    user_agent_name = models.CharField(max_length=64, null=True)
+    user_agent_version = models.CharField(max_length=32, null=True)
+    user_agent_install_location = models.CharField(max_length=128, null=True)
 
-    os_platform = models.CharField(max_length=64)
-    os_system = models.CharField(max_length=64)
-    os_release = models.CharField(max_length=32)
-    os_version = models.CharField(max_length=128)
-    os_username = models.CharField(max_length=64)
+    os_platform = models.CharField(max_length=64, null=True)
+    os_system = models.CharField(max_length=64, null=True)
+    os_release = models.CharField(max_length=32, null=True)
+    os_version = models.CharField(max_length=128, null=True)
+    os_username = models.CharField(max_length=64, null=True)
 
-    machine = models.CharField(max_length=64)
-    architecture = models.CharField(max_length=64)
-    processor = models.CharField(max_length=64)
-    memory = models.CharField(max_length=32)
-    cpus = models.IntegerField()
+    machine = models.CharField(max_length=64, null=True)
+    architecture = models.CharField(max_length=64, null=True)
+    processor = models.CharField(max_length=64, null=True)
+    memory = models.CharField(max_length=32, null=True)
+    cpus = models.IntegerField(null=True)
 
-    disk_usage = models.TextField()
-    data_path = models.CharField(max_length=64)
-    default_user = models.CharField(max_length=64)
+    disk_usage = models.TextField(null=True)
+    data_path = models.CharField(max_length=64, null=True)
+    default_user = models.CharField(max_length=64, null=True)
 
     interface = models.CharField(max_length=64, default="", blank=False)
     mac_address = models.CharField(max_length=64, unique=True, blank=False)
-    ipv4_address = models.CharField(max_length=16)
-    ipv6_address = models.CharField(max_length=64)
-    subnet_mask = models.CharField(max_length=16)
+    ipv4_address = models.CharField(max_length=16, null=True)
+    ipv6_address = models.CharField(max_length=64, null=True)
+    subnet_mask = models.CharField(max_length=16, null=True)
 
-    hostname = models.CharField(max_length=64)
+    hostname = models.CharField(max_length=64, null=True)
 
     # The wan_ip_address is populated in TastyPie by looking in request.META
     # It could be IPv4 or IPv6
-    wan_ip_address = models.CharField(max_length=64)
+    wan_ip_address = models.CharField(max_length=64, null=True)
 
-    created_time = models.DateTimeField()
-    updated_time = models.DateTimeField()
+    created_time = models.DateTimeField(null=True)
+    updated_time = models.DateTimeField(null=True)
 
     class Meta:
         app_label = 'mydata'
