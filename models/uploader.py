@@ -153,7 +153,7 @@ class UploaderRegistrationRequest(models.Model):
     requester_key_fingerprint = models.CharField(max_length=64)
     request_time = models.DateTimeField(null=True, blank=True)
 
-    approved = models.BooleanField()
+    approved = models.BooleanField(default=False)
     approved_staging_host = models.ForeignKey(UploaderStagingHost,
                                               null=True, blank=True,
                                               default=None)
