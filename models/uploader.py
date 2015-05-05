@@ -1,7 +1,5 @@
 from django.db import models
 
-from tardis.tardis_portal.models.instrument import Instrument
-
 
 class Uploader(models.Model):
     '''
