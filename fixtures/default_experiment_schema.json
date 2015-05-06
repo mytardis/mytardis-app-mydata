@@ -1,11 +1,11 @@
 [
   {
-    "pk": 4,
+    "pk": null,
     "model": "tardis_portal.schema",
     "fields":
     {
-      "name": "Experiment Instrument",
-      "namespace": "http://tardis.edu.au/schemas/experimentInstrument",
+      "name": "MyData Default Experiment",
+      "namespace": "http://mytardis.org/schemas/mydata/defaultexperiment",
       "subtype": "",
       "hidden": false,
       "type": 1,
@@ -18,51 +18,52 @@
     "model": "tardis_portal.parametername",
     "fields":
     {
-      "name": "date",
-      "data_type": 2,
-      "is_searchable": true,
-      "choices": "",
-      "comparison_type": 1,
-      "full_name": "Date",
-      "units": "",
-      "order": 9999,
-      "immutable": false,
-      "schema": 4
-    }
-  }, 
-
-  {
-    "pk": null,
-    "model": "tardis_portal.parametername",
-    "fields":
-    {
-      "name": "instrument",
+      "name": "uploader_uuid",
       "data_type": 2,
       "is_searchable": true,
       "choices": "",
       "comparison_type": 1,
       "full_name": "Instrument",
       "units": "",
-      "order": 9999,
+      "order": 1,
       "immutable": false,
-      "schema": 4
+      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"] 
     }
-  }, 
+  },
 
   {
     "pk": null,
     "model": "tardis_portal.parametername",
     "fields":
     {
-      "name": "owner",
+      "name": "user_folder_name",
       "data_type": 2,
       "is_searchable": true,
       "choices": "",
       "comparison_type": 1,
       "full_name": "Owner",
-      "units": "", "order": 9999,
+      "units": "",
+      "order": 2,
       "immutable": false,
-      "schema": 4
+      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
     }
-  }, 
+  },
+
+  {
+    "pk": null,
+    "model": "tardis_portal.parametername",
+    "fields":
+    {
+      "name": "dataset_folder_created_date",
+      "data_type": 2,
+      "is_searchable": true,
+      "choices": "",
+      "comparison_type": 1,
+      "full_name": "Date",
+      "units": "",
+      "order": 3,
+      "immutable": false,
+      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
+    }
+  }
 ]
