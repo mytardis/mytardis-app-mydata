@@ -1,8 +1,6 @@
 # mytardis-app-mydata
 Server-side functionality and data models for MyData
 
-UNDER CONSTRUCTION
-
 
 This app should be installed in "tardis/apps/mydata":
 ```
