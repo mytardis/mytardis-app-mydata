@@ -14,6 +14,7 @@ import tardis.tardis_portal.api
 from tardis.tardis_portal.models.facility import facilities_managed_by
 from tardis.tardis_portal.models.experiment import Experiment
 from tardis.tardis_portal.models.parameters import Schema
+from tardis.tardis_portal.models.parameters import ParameterName
 from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 
@@ -109,6 +110,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         queryset = Uploader.objects.all()
         filtering = {
             'mac_address': ('exact', ),
+            'uuid': ('exact', ),
             'name': ('exact', ),
             'id': ('exact', ),
         }
@@ -242,12 +244,12 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             uploader_uuid = bundle.request.GET['uploader_uuid']
             user_folder_name = bundle.request.GET['user_folder_name']
 
-            exp_schema = Schema.objects.get(
+            mydata_default_exp_schema = Schema.objects.get(
                 namespace='http://mytardis.org'
                 '/schemas/mydata/defaultexperiment')
 
             exp_psets = ExperimentParameterSet.objects\
-                .filter(schema=exp_schema)
+                .filter(schema=mydata_default_exp_schema)
             for exp_pset in exp_psets:
                 exp_params = ExperimentParameter.objects\
                     .filter(parameterset=exp_pset)
@@ -280,12 +282,12 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             user_folder_name = bundle.request.GET['user_folder_name']
             title = bundle.request.GET['title']
 
-            exp_schema = Schema.objects.get(
-                namespace='http://tardis.edu.au'
-                '/schemas/experimentInstrument')
+            mydata_default_exp_schema = Schema.objects.get(
+                namespace='http://mytardis.org'
+                '/schemas/mydata/defaultexperiment')
 
             exp_psets = ExperimentParameterSet.objects\
-                .filter(schema=exp_schema)
+                .filter(schema=mydata_default_exp_schema)
             for exp_pset in exp_psets:
                 exp_params = ExperimentParameter.objects\
                     .filter(parameterset=exp_pset)
@@ -309,3 +311,30 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
 
         return super(ExperimentAppResource, self).obj_get_list(bundle,
                                                                **kwargs)
+
+    def save_m2m(self, bundle):
+        '''
+        MyData POSTs a UUID to identify the uploader (MyData instance)
+        associated with this experiment.  Below, we find the Uploader
+        model object which has that UUID.
+        '''
+        super(ExperimentAppResource, self).save_m2m(bundle)
+        exp = bundle.obj
+        mydata_exp_schema = \
+            Schema.objects.filter(namespace='http://mytardis.org/schemas'
+                                  '/mydata/defaultexperiment').first()
+        if mydata_exp_schema is None:
+            return
+        mydata_exp_pset = \
+            ExperimentParameterSet.objects.get(schema=mydata_exp_schema,
+                                               experiment=exp)
+        uploader_par_name = \
+            ParameterName.objects.get(schema=mydata_exp_schema,
+                                      name='uploader')
+        uploader_param = \
+            ExperimentParameter.objects.get(parameterset=mydata_exp_pset,
+                                            name=uploader_par_name)
+        uploader = Uploader.objects.get(uuid=uploader_param.string_value)
+        uploader_param.link_id = uploader.id
+        uploader_param.link_ct = uploader.get_ct()
+        uploader_param.save()
