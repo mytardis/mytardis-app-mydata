@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
 
 
 class Uploader(models.Model):
@@ -10,30 +11,14 @@ class Uploader(models.Model):
     staging area.  See also the UploaderRegistrationRequest model.
 
     To be more accurate, an uploader represents a MyTardis-upload
-    program instance which is installed on a PC and is running on
-    a specific network interface on that PC.  If the MyTardis-upload
-    program is run on a different interface (e.g. WiFi vs Ethernet),
-    then a separate uploader record should be created by the
-    MyTardis-upload program, and any requests for registering the
-    uploader for access to a staging area will need to be resubmitted
-    for the different network device.  Using a MAC addresss to
-    ensure uniqueness may seem unnecessarily complicated, compared
-    to having just one uploader record per PC, but there is no
-    guarantee that a MyTardis upload PC will have a fixed IP address
-    or anything else which can be used to identify it uniquely.
-
-    The Uploader model employs an unusual authorization mechanism in
-    the TastyPie API.  A new uploader record can be created without
-    any explicit authorization, but then it can only be retreived or
-    updated if its MAC address is included in the query.  A MyTardis
-    upload application can create an Uploader record immediately
-    upon launch without waiting for the user to authenticate.  Then
-    even if the user fails to enter valid MyTardis credentials into
-    the MyTardis upload application, the MyTardis administrator will
-    still have some basic information about the attempted MyTardis
-    upload configuration, which can be used to help the user to
-    resolve any problems they may be having with configuring
-    MyTardis uploads.
+    program instance which is installed on a PC.  Previously, a
+    single PC running MyData could generate multiple uploader
+    records, one for each network interface, because the PC's
+    MAC address was used as the unique identifier.  Now, MyData
+    generates a UUID the first time it runs, and if the user
+    switches network interfaces, then the same uploader record
+    will be used (and updated if necessary), instead of creating
+    a second uploader record for the second network interface.
 
     Some field values within each uploader record (e.g. IP address)
     may change after this uploader has been approved.  The MyTardis
@@ -41,6 +26,8 @@ class Uploader(models.Model):
     Uploader's IP range needs to be added to a hosts.allow file or
     to a firewall rule, or whether an SSH key-pair is sufficient.
     '''
+
+    uuid = models.CharField(max_length=36, unique=True, blank=False)
 
     name = models.CharField(max_length=64)
     contact_name = models.CharField(max_length=64)
@@ -86,7 +73,7 @@ class Uploader(models.Model):
     default_user = models.CharField(max_length=64, null=True)
 
     interface = models.CharField(max_length=64, default="", blank=False)
-    mac_address = models.CharField(max_length=64, unique=True, blank=False)
+    mac_address = models.CharField(max_length=64, blank=False)
     ipv4_address = models.CharField(max_length=16, null=True)
     ipv6_address = models.CharField(max_length=64, null=True)
     subnet_mask = models.CharField(max_length=16, null=True)
@@ -105,8 +92,10 @@ class Uploader(models.Model):
         verbose_name_plural = 'Uploaders'
 
     def __unicode__(self):
-        return self.name + " | " + self.interface + " | " + self.mac_address
+        return self.name + " | " + self.uuid
 
+    def get_ct(self):
+        return ContentType.objects.get_for_model(self)
 
 class UploaderStagingHost(models.Model):
     '''
