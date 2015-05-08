@@ -7,45 +7,27 @@
       "name": "MyData Default Experiment",
       "namespace": "http://mytardis.org/schemas/mydata/defaultexperiment",
       "subtype": "",
-      "hidden": false,
+      "hidden": true,
       "type": 1,
-      "immutable": false
+      "immutable": true
     }
   },
 
   {
     "pk": null,
     "model": "tardis_portal.parametername",
-    "fields":
+    "fields": 
     {
-      "name": "uploader_name",
-      "data_type": 2,
-      "is_searchable": true,
+      "name": "uploader",
+      "data_type": 4,
+      "is_searchable": false,
       "choices": "",
       "comparison_type": 1,
-      "full_name": "Uploader Name",
+      "full_name": "Uploader",
       "units": "",
       "order": 1,
-      "immutable": false,
-      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"] 
-    }
-  },
-
-  {
-    "pk": null,
-    "model": "tardis_portal.parametername",
-    "fields":
-    {
-      "name": "uploader_uuid",
-      "data_type": 2,
-      "is_searchable": true,
-      "choices": "",
-      "comparison_type": 1,
-      "full_name": "Uploader UUID",
-      "units": "",
-      "order": 2,
-      "immutable": false,
-      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"] 
+      "immutable": true,
+      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
     }
   },
 
@@ -61,26 +43,8 @@
       "comparison_type": 1,
       "full_name": "User Folder Name",
       "units": "",
-      "order": 3,
-      "immutable": false,
-      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
-    }
-  },
-
-  {
-    "pk": null,
-    "model": "tardis_portal.parametername",
-    "fields":
-    {
-      "name": "dataset_folder_created_date",
-      "data_type": 2,
-      "is_searchable": true,
-      "choices": "",
-      "comparison_type": 1,
-      "full_name": "Dataset Folder Created Date",
-      "units": "",
-      "order": 4,
-      "immutable": false,
+      "order": 2,
+      "immutable": true,
       "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
     }
   }
