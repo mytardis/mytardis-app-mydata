@@ -23,7 +23,8 @@ INSTALLED_APPS += ('tardis.apps.mydata',)
 Create Uploader data models:
 
 ```
-python mytardis.py syncdb
+python mytardis.py schemamigration mydata --initial
+python mytardis.py migrate mydata
 ```
 
 Create defaultexperiment schema from fixture:
