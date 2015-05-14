@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 
+from tardis.tardis_portal.models.storage import StorageBox
 
 class Uploader(models.Model):
     '''
@@ -97,28 +98,6 @@ class Uploader(models.Model):
     def get_ct(self):
         return ContentType.objects.get_for_model(self)
 
-class UploaderStagingHost(models.Model):
-    '''
-    Represents a file server (usually accessible via RSYNC over SSH)
-    which allows "uploaders" to write to MyTardis's staging area.
-    The boolean fields can remind the MyTardis administrator of the
-    firewall(s) which need to be updated to authorize an uploader
-    to access this staging host (via RSYNC over SSH or SCP etc.).
-    '''
-
-    host = models.CharField(default="", max_length=64)
-
-    uses_hosts_allow = models.BooleanField()
-    uses_iptables_firewall = models.BooleanField()
-    uses_external_firewall = models.BooleanField()
-
-    class Meta:
-        app_label = 'mydata'
-        verbose_name_plural = 'UploaderStagingHosts'
-
-    def __unicode__(self):
-        return self.host
-
 
 class UploaderRegistrationRequest(models.Model):
     '''
@@ -141,11 +120,9 @@ class UploaderRegistrationRequest(models.Model):
     request_time = models.DateTimeField(null=True, blank=True)
 
     approved = models.BooleanField(default=False)
-    approved_staging_host = models.ForeignKey(UploaderStagingHost,
+    approved_storage_box = models.ForeignKey(StorageBox,
                                               null=True, blank=True,
                                               default=None)
-    approved_username = models.CharField(max_length=32, null=True,
-                                         blank=True, default=None)
     approver_comments = models.TextField(null=True, blank=True, default=None)
     approval_expiry = models.DateField(null=True, blank=True, default=None)
     approval_time = models.DateTimeField(null=True, blank=True, default=None)
