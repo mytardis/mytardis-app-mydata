@@ -19,7 +19,6 @@ from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 
 from models.uploader import Uploader
-from models.uploader import UploaderStagingHost
 from models.uploader import UploaderRegistrationRequest
 
 logger = logging.getLogger(__name__)
@@ -37,12 +36,6 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             if is_facility_manager:
                 return object_list
             return []
-        elif isinstance(bundle.obj, UploaderStagingHost):
-            '''
-            The uploader staging host is currently designed to be viewed
-            only in the Django admin interface, not via the API.
-            '''
-            raise NotImplementedError(type(bundle.obj))
         elif isinstance(bundle.obj, UploaderRegistrationRequest):
             if is_facility_manager:
                 return object_list
@@ -57,8 +50,6 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
             return is_facility_manager
-        elif isinstance(bundle.obj, UploaderStagingHost):
-            return False
         elif isinstance(bundle.obj, UploaderRegistrationRequest):
             return is_facility_manager
         else:
@@ -139,23 +130,13 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         return bundle
 
 
-class UploaderStagingHostAppResource(tardis.tardis_portal.api
-                                     .MyTardisModelResource):
-    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
-        resource_name = 'uploaderstaginghost'
-        authentication = tardis.tardis_portal.api.default_authentication
-        authorization = ACLAuthorization()
-        queryset = UploaderStagingHost.objects.all()
-
-
 class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
                                              .MyTardisModelResource):
     uploader = fields.ForeignKey(
         'tardis.apps.mydata.api.UploaderAppResource', 'uploader')
-    approved_staging_host = fields.ForeignKey(
-        'tardis.apps.mydata.api.UploaderStagingHostAppResource',
-        'approved_staging_host',
-        full=True, null=True, blank=True, default=None)
+    approved_storage_box = fields.ForeignKey(
+        'tardis.tardis_portal.api.LocationResource',
+        'approved_storage_box', full=True)
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
         resource_name = 'uploaderregistrationrequest'
@@ -167,6 +148,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
             'approved': ('exact', ),
             'requester_key_fingerprint': ('exact', ),
             'uploader': ALL_WITH_RELATIONS,
+            'approved_storage_box': ALL_WITH_RELATIONS,
             'requester_key_fingerprint': ('exact', ),
         }
         always_return_data = True
@@ -213,8 +195,8 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
         return bundle
 
     def save_related(self, bundle):
-        if not hasattr(bundle.obj, 'approved_staging_host'):
-            bundle.obj.approved_staging_host = None
+        if not hasattr(bundle.obj, 'approved_storage_box'):
+            bundle.obj.approved_storage_box = None
         super(UploaderRegistrationRequestAppResource,
               self).save_related(bundle)
 
