@@ -25,7 +25,6 @@ from tardis.tardis_portal.models import Facility
 from tardis.tardis_portal.models import Instrument
 
 from tardis.apps.mydata.models import Uploader
-from tardis.apps.mydata.models import UploaderStagingHost
 from tardis.apps.mydata.models import UploaderRegistrationRequest
 
 
