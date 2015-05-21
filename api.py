@@ -136,7 +136,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
         'tardis.apps.mydata.api.UploaderAppResource', 'uploader')
     approved_storage_box = fields.ForeignKey(
         'tardis.tardis_portal.api.StorageBoxResource',
-        'approved_storage_box', full=True)
+        'approved_storage_box', null=True, full=True)
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
         resource_name = 'uploaderregistrationrequest'
