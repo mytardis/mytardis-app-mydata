@@ -30,8 +30,13 @@ python mytardis.py migrate mydata
 ```
 Restart MyTardis.
 
-Create defaultexperiment schema from fixture:
+Create the "http://mytardis.org/schemas/mydata/defaultexperiment" schema from the fixture provided:
 
 ```
 python mytardis.py loaddata tardis/apps/mydata/fixtures/default_experiment_schema.json
 ```
+
+Check that the "http://mytardis.org/schemas/mydata/defaultexperiment" schema is accessible in the Django Admin interface.
+
+Check that the "mytardis-app-mydata" app's API endpoints are accessible.  You should see some API URIs beginning with the "mydata_" prefix in http://\<your-mytardis-host\>/api/v1/?format=json
+
