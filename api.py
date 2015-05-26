@@ -5,10 +5,12 @@ Additions to MyTardis's REST API
 import logging
 import traceback
 from datetime import datetime
-from ipware.ip import get_ip
 
+from django.conf import settings
+from django.contrib.sites.models import Site
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
+from ipware.ip import get_ip
 
 import tardis.tardis_portal.api
 from tardis.tardis_portal.models.facility import facilities_managed_by
