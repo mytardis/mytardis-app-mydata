@@ -55,7 +55,7 @@ class Uploader(models.Model):
 
     user_agent_name = models.CharField(max_length=64, null=True)
     user_agent_version = models.CharField(max_length=32, null=True)
-    user_agent_install_location = models.CharField(max_length=128, null=True)
+    user_agent_install_location = models.CharField(max_length=256, null=True)
 
     os_platform = models.CharField(max_length=64, null=True)
     os_system = models.CharField(max_length=64, null=True)
@@ -70,7 +70,7 @@ class Uploader(models.Model):
     cpus = models.IntegerField(null=True)
 
     disk_usage = models.TextField(null=True)
-    data_path = models.CharField(max_length=64, null=True)
+    data_path = models.CharField(max_length=256, null=True)
     default_user = models.CharField(max_length=64, null=True)
 
     interface = models.CharField(max_length=64, default="", blank=False)
