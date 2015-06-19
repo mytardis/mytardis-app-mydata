@@ -19,6 +19,7 @@ from tardis.tardis_portal.models.parameters import Schema
 from tardis.tardis_portal.models.parameters import ParameterName
 from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
+from tardis.tardis_portal.models.datafile import DataFileObject
 
 from models.uploader import Uploader
 from models.uploader import UploaderRegistrationRequest
@@ -322,3 +323,42 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
         uploader_param.link_id = uploader.id
         uploader_param.link_ct = uploader.get_ct()
         uploader_param.save()
+
+
+class DataFileAppResource(tardis.tardis_portal.api.DataFileResource):
+    '''Extends MyTardis's API for DataFiles to make use of the
+    Uploader model's approved_storage_box in staging uploads
+    (e.g. from MyData)
+    '''
+    temp_url = None
+
+    class Meta(tardis.tardis_portal.api.DataFileResource.Meta):
+        # This will be mapped to mydata_dataset_file by MyTardis's urls.py:
+        resource_name = 'dataset_file'
+
+    def obj_create(self, bundle, **kwargs):
+        retval = super(tardis.tardis_portal.api.DataFileResource, self)\
+            .obj_create(bundle, **kwargs)
+        if 'replicas' not in bundle.data or not bundle.data['replicas']:
+            # no replica specified: return upload path and create dfo for
+            # new path
+            datafile = bundle.obj
+            try:
+                ip = get_ip(bundle.request)
+                uploader = Uploader.objects.get(wan_ip_address=ip)
+                assert uploader.instruments\
+                    .filter(id=datafile.dataset.instrument.id).exists()
+                uploader_registration_request = \
+                    UploaderRegistrationRequest.objects.get(uploader=uploader)
+                sbox = uploader_registration_request.approved_storage_box
+            except:
+                sbox = datafile.get_receiving_storage_box()
+            if sbox is None:
+                raise NotImplementedError
+            dfo = DataFileObject(
+                datafile=datafile,
+                storage_box=sbox)
+            dfo.save()
+            dfo.create_set_uri()
+            self.temp_url = dfo.get_full_path()
+        return retval
