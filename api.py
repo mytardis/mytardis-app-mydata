@@ -345,13 +345,15 @@ class DataFileAppResource(tardis.tardis_portal.api.DataFileResource):
             datafile = bundle.obj
             try:
                 ip = get_ip(bundle.request)
-                uploader = Uploader.objects.get(wan_ip_address=ip)
-                assert uploader.instruments\
-                    .filter(id=datafile.dataset.instrument.id).exists()
+                uploader = Uploader.objects\
+                    .filter(wan_ip_address=ip,
+                            instruments__id=datafile.dataset.instrument.id)\
+                    .first()
                 uploader_registration_request = \
                     UploaderRegistrationRequest.objects.get(uploader=uploader)
                 sbox = uploader_registration_request.approved_storage_box
             except:
+                logger.warning(traceback.format_exc())
                 sbox = datafile.get_receiving_storage_box()
             if sbox is None:
                 raise NotImplementedError
