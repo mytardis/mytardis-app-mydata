@@ -8,6 +8,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.template import Context
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
 from ipware.ip import get_ip
