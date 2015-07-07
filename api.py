@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
