@@ -51,7 +51,7 @@ class Uploader(models.Model):
     instruments = \
         models.ManyToManyField("tardis_portal.Instrument", 
                                related_name="uploaders",
-                               blank=True, null=True)
+                               blank=True)
 
     user_agent_name = models.CharField(max_length=64, null=True)
     user_agent_version = models.CharField(max_length=32, null=True)
