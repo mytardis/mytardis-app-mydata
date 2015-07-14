@@ -9,6 +9,8 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.core import mail
+from django.core.mail import get_connection
 from django.template import Context
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
@@ -161,33 +163,20 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
     def obj_create(self, bundle, **kwargs):
         bundle = super(UploaderRegistrationRequestAppResource, self)\
             .obj_create(bundle, **kwargs)
-
-        protocol = ""
-
         try:
-            if hasattr(settings, "IS_SECURE") and settings.IS_SECURE:
-                protocol = "s"
-
-            current_site_complete = "http%s://%s" % \
-                (protocol, Site.objects.get_current().domain)
-
-            context = Context({
-                'current_site': current_site_complete,
-                'request_id': bundle.obj.id
-            })
-
+            site = Site.objects.get_current().domain
             subject = '[MyTardis] Uploader Registration Request Created'
-
-            staff_users = User.objects.filter(is_staff=True)
-
-            for staff in staff_users:
-                if staff.email:
-                    logger.info('email task dispatched to staff %s'
-                                % staff.username)
-                    email_user_task\
-                        .delay(subject,
-                               'uploader_registration_request_created',
-                               context, staff)
+            message = \
+                "Hi, this message is for MyTardis Admins.\n\n" \
+                "An uploader registration request has just been created:\n\n" \
+                "%s/admin/mydata/uploaderregistrationrequest/%d\n\n" \
+                "Thanks,\n" \
+                "MyTardis\n" \
+                % (site, bundle.obj.id)
+            logger.info('Informing admins of a new '
+                        'uploader registraion request.')
+            mail.mail_admins(subject, message,
+                             connection=get_connection(fail_silently=True))
         except:
             logger.error(traceback.format_exc())
 
