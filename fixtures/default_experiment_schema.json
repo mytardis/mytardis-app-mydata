@@ -47,5 +47,23 @@
       "immutable": true,
       "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
     }
+  },
+
+  {
+    "pk": null,
+    "model": "tardis_portal.parametername",
+    "fields":
+    {
+      "name": "group_folder_name",
+      "data_type": 2,
+      "is_searchable": true,
+      "choices": "",
+      "comparison_type": 1,
+      "full_name": "Group Folder Name",
+      "units": "",
+      "order": 3,
+      "immutable": true,
+      "schema": ["http://mytardis.org/schemas/mydata/defaultexperiment"]
+    }
   }
 ]
