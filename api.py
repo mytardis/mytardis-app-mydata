@@ -206,19 +206,21 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
 
     def obj_get_list(self, bundle, **kwargs):
         '''
-        Responds to uploader/user_folder_name query for MyData.
-        Used by MyData to determine whether an appropriate default experiment
-        exists to add a dataset to.  MyData generates the UUID the first time
+        Responds to uploader/user_folder_name/group_folder_name query
+        for MyData. Used to determine whether an appropriate default experiment
+        exists to add a dataset to. MyData generates the UUID the first time
         it runs on each upload PC. The UUID together with the user folder name
         can be used to uniquely identify one particular user who has saved data
         on an instrument PC running a MyData instance identified by the UUID.
         '''
         if hasattr(bundle.request, 'GET') and \
                 'uploader' in bundle.request.GET and \
-                'user_folder_name' in bundle.request.GET:
+                'user_folder_name' in bundle.request.GET and \
+                'group_folder_name' in bundle.request.GET:
 
             uploader_uuid = bundle.request.GET['uploader']
             user_folder_name = bundle.request.GET['user_folder_name']
+            group_folder_name = bundle.request.GET['group_folder_name']
 
             mydata_default_exp_schema = Schema.objects.get(
                 namespace='http://mytardis.org'
@@ -231,6 +233,7 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     .filter(parameterset=exp_pset)
                 matched_uploader_uuid = False
                 matched_user_folder_name = False
+                matched_group_folder_name = (group_folder_name != "None")
                 for exp_param in exp_params:
                     if exp_param.name.name == "uploader" and \
                             exp_param.string_value == uploader_uuid:
@@ -238,7 +241,11 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     if exp_param.name.name == "user_folder_name" and \
                             exp_param.string_value == user_folder_name:
                         matched_user_folder_name = True
-                if matched_uploader_uuid and matched_user_folder_name:
+                    if exp_param.name.name == "group_folder_name" and \
+                            exp_param.string_value == group_folder_name:
+                        matched_group_folder_name = True
+                if matched_uploader_uuid and matched_user_folder_name and \
+                        matched_group_folder_name:
                     experiment_id = exp_pset.experiment.id
                     exp_list = Experiment.objects.filter(pk=experiment_id)
                     if exp_list[0] in Experiment.safe.all(bundle.request.user):
@@ -247,15 +254,18 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             return []
 
         '''
-        Responds to uploader/user_folder_name/title query for MyData.
+        Responds to uploader/user_folder_name/group_folder_name/title query
+        for MyData.
         '''
         if hasattr(bundle.request, 'GET') and \
                 'uploader' in bundle.request.GET and \
                 'user_folder_name' in bundle.request.GET and \
+                'group_folder_name' in bundle.request.GET and \
                 'title' in bundle.request.GET:
 
             uploader_uuid = bundle.request.GET['uploader']
             user_folder_name = bundle.request.GET['user_folder_name']
+            group_folder_name = bundle.request.GET['group_folder_name']
             title = bundle.request.GET['title']
 
             mydata_default_exp_schema = Schema.objects.get(
@@ -269,6 +279,7 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     .filter(parameterset=exp_pset)
                 matched_uploader_uuid = False
                 matched_user_folder_name = False
+                matched_group_folder_name = (group_folder_name != "None")
                 for exp_param in exp_params:
                     if exp_param.name.name == "uploader" and \
                             exp_param.string_value == uploader_uuid:
@@ -276,7 +287,11 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     if exp_param.name.name == "user_folder_name" and \
                             exp_param.string_value == user_folder_name:
                         matched_user_folder_name = True
-                if matched_uploader_uuid and matched_user_folder_name:
+                    if exp_param.name.name == "group_folder_name" and \
+                            exp_param.string_value == group_folder_name:
+                        matched_group_folder_name = True
+                if matched_uploader_uuid and matched_user_folder_name and \
+                        matched_group_folder_name:
                     experiment_id = exp_pset.experiment.id
                     exp_list = Experiment.objects.filter(pk=experiment_id)
                     if exp_list[0] in Experiment.safe.all(bundle.request.user)\
