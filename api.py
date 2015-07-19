@@ -233,7 +233,7 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     .filter(parameterset=exp_pset)
                 matched_uploader_uuid = False
                 matched_user_folder_name = False
-                matched_group_folder_name = (group_folder_name != "None")
+                matched_group_folder_name = (group_folder_name == "None")
                 for exp_param in exp_params:
                     if exp_param.name.name == "uploader" and \
                             exp_param.string_value == uploader_uuid:
@@ -279,7 +279,7 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     .filter(parameterset=exp_pset)
                 matched_uploader_uuid = False
                 matched_user_folder_name = False
-                matched_group_folder_name = (group_folder_name != "None")
+                matched_group_folder_name = (group_folder_name == "None")
                 for exp_param in exp_params:
                     if exp_param.name.name == "uploader" and \
                             exp_param.string_value == uploader_uuid:
