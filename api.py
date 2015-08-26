@@ -213,6 +213,7 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
         For backwards compatibility with older MyData versions, let's
         try to guess the folder structure if it wasn't provided:
         '''
+        folder_structure = None
         if hasattr(bundle.request, 'GET') and \
                 'folder_structure' not in bundle.request.GET:
             if 'group_folder_name' in bundle.request.GET and \
@@ -225,7 +226,6 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                     folder_structure = 'Username / ...'
             else:
                 folder_structure = 'Username / ...'
-            bundle.request.GET['folder_structure'] = folder_structure
 
         '''
         Responds to title/folder_structure/[user_folder_name|group_folder_name]
@@ -234,12 +234,12 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
         '''
         if hasattr(bundle.request, 'GET') and \
                 'title' in bundle.request.GET and \
-                'folder_structure' in bundle.request.GET and \
                 ('user_folder_name' in bundle.request.GET or
                  'group_folder_name' in bundle.request.GET):
 
             title = bundle.request.GET['title']
-            folder_structure = bundle.request.GET['folder_structure']
+            if 'folder_structure' in bundle.request.GET:
+                folder_structure = bundle.request.GET['folder_structure']
             need_to_match_user = (folder_structure.startswith('Username /') or
                                   folder_structure.startswith('Email /'))
             need_to_match_group = folder_structure.startswith('User Group /')
@@ -298,12 +298,12 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
         '''
         if hasattr(bundle.request, 'GET') and \
                 'uploader' in bundle.request.GET and \
-                'folder_structure' in bundle.request.GET and \
                 ('user_folder_name' in bundle.request.GET or
                  'group_folder_name' in bundle.request.GET):
 
             uploader_uuid = bundle.request.GET['uploader']
-            folder_structure = bundle.request.GET['folder_structure']
+            if 'folder_structure' in bundle.request.GET:
+                folder_structure = bundle.request.GET['folder_structure']
             need_to_match_user = (folder_structure.startswith('Username /') or
                                   folder_structure.startswith('Email /'))
             need_to_match_group = folder_structure.startswith('User Group /')
