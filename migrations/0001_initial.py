@@ -7,6 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('tardis_portal', '0001_initial'),
     ]
 
     operations = [
