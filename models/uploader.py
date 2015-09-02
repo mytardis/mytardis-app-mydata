@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 
-from tardis.tardis_portal.models.storage import StorageBox
+from tardis.tardis_portal.models import StorageBox
+from tardis.tardis_portal.models import Instrument
 
 class Uploader(models.Model):
     '''
@@ -49,7 +50,7 @@ class Uploader(models.Model):
     single instrument.
     '''
     instruments = \
-        models.ManyToManyField("tardis_portal.Instrument", 
+        models.ManyToManyField(Instrument, 
                                related_name="uploaders",
                                blank=True)
 
