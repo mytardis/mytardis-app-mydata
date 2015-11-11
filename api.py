@@ -244,13 +244,25 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                                   folder_structure.startswith('Email /'))
             need_to_match_group = folder_structure.startswith('User Group /')
 
+            class UnknownUser(object):
+                def __init__(self, username='UNKNOWN', email='UNKNOWN'):
+                    self.username = username
+                    self.email = email
+
             if need_to_match_user:
                 user_folder_name = bundle.request.GET['user_folder_name']
                 if folder_structure.startswith('Username /'):
-                    user_to_match = User.objects.get(username=user_folder_name)
+                    try:
+                        user_to_match = \
+                            User.objects.get(username=user_folder_name)
+                    except User.DoesNotExist:
+                        user_to_match = UnknownUser(username=user_folder_name)
                 elif folder_structure.startswith('Email /'):
-                    user_to_match = \
-                        User.objects.get(email__iexact=user_folder_name)
+                    try:
+                        user_to_match = \
+                            User.objects.get(email__iexact=user_folder_name)
+                    except User.DoesNotExist:
+                        user_to_match = UnknownUser(email=user_folder_name)
 
             if need_to_match_group:
                 group_folder_name = bundle.request.GET['group_folder_name']
@@ -289,7 +301,8 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             return []
 
         '''
-        Responds to uploader/folder_structure/[user_folder_name|group_folder_name]
+        Responds to
+        uploader/folder_structure/[user_folder_name|group_folder_name]
         query for MyData.  Each MyData instance generates a UUID the first time
         it runs on each upload PC. The UUID together with the user folder name
         (or group folder name) can be used to uniquely identify one particular
@@ -311,10 +324,17 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             if need_to_match_user:
                 user_folder_name = bundle.request.GET['user_folder_name']
                 if folder_structure.startswith('Username /'):
-                    user_to_match = User.objects.get(username=user_folder_name)
+                    try:
+                        user_to_match = \
+                            User.objects.get(username=user_folder_name)
+                    except User.DoesNotExist:
+                        user_to_match = UnknownUser(username=user_folder_name)
                 elif folder_structure.startswith('Email /'):
-                    user_to_match = \
-                        User.objects.get(email__iexact=user_folder_name)
+                    try:
+                        user_to_match = \
+                            User.objects.get(email__iexact=user_folder_name)
+                    except User.DoesNotExist:
+                        user_to_match = UnknownUser(email=user_folder_name)
 
             if need_to_match_group:
                 group_folder_name = bundle.request.GET['group_folder_name']
