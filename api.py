@@ -119,11 +119,10 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         authentication = tardis.tardis_portal.api.default_authentication
         authorization = ACLAuthorization()
         queryset = Uploader.objects.all()
+        fields = ['id', 'name', 'settings_updated', 'settings_downloaded']
         filtering = {
-            'mac_address': ('exact', ),
             'uuid': ('exact', ),
             'name': ('exact', ),
-            'id': ('exact', ),
         }
         always_return_data = True
 
