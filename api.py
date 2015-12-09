@@ -145,6 +145,27 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 del(bundle.data[key])
         return bundle
 
+    def hydrate_m2m(self, bundle):
+        '''
+        Allow updating multiple UploaderSettings simultaneously.
+        '''
+        if getattr(bundle.obj, 'id', False) and 'settings' in bundle.data:
+            uploader = bundle.obj
+            for setting in bundle.data['settings']:
+                try:
+                    uploader_setting = \
+                        UploaderSetting.objects.get(uploader=uploader,
+                                                    key=setting['key'])
+                    uploader_setting.value = setting['value']
+                except UploaderSetting.DoesNotExist:
+                    uploader_setting = UploaderSetting(uploader=uploader,
+                                                       key=setting['key'],
+                                                       value=setting['value'])
+                uploader_setting.save()
+            del(bundle.data['settings'])
+
+        return super(UploaderAppResource, self).hydrate_m2m(bundle)
+
     def obj_create(self, bundle, **kwargs):
         bundle.data['created_time'] = datetime.now()
         bundle.data['updated_time'] = datetime.now()
