@@ -93,10 +93,10 @@ class Uploader(models.Model):
     updated_time = models.DateTimeField(null=True)
 
     #: Thet last time the uploader settings were updated.
-    settings_updated = models.DateTimeField(null=True)
+    settings_updated = models.DateTimeField(null=True, blank=True)
 
     #: The last time the settings were downloaded to the MyData client.
-    settings_downloaded = models.DateTimeField(null=True)
+    settings_downloaded = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         app_label = 'mydata'

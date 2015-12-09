@@ -26,12 +26,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='uploader',
             name='settings_downloaded',
-            field=models.DateTimeField(null=True),
+            field=models.DateTimeField(null=True, blank=True),
         ),
         migrations.AddField(
             model_name='uploader',
             name='settings_updated',
-            field=models.DateTimeField(null=True),
+            field=models.DateTimeField(null=True, blank=True),
         ),
         migrations.AddField(
             model_name='uploadersetting',
