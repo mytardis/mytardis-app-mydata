@@ -50,7 +50,7 @@ class Uploader(models.Model):
     single instrument.
     '''
     instruments = \
-        models.ManyToManyField(Instrument, 
+        models.ManyToManyField(Instrument,
                                related_name="uploaders",
                                blank=True)
 
@@ -86,8 +86,17 @@ class Uploader(models.Model):
     # It could be IPv4 or IPv6
     wan_ip_address = models.CharField(max_length=64, null=True)
 
+    #: When the MyData instance was first registered on the MyTardis server.
     created_time = models.DateTimeField(null=True)
+
+    #: The last time this MyData instance ran on the client.
     updated_time = models.DateTimeField(null=True)
+
+    #: Thet last time the uploader settings were updated.
+    settings_updated = models.DateTimeField(null=True)
+
+    #: The last time the settings were downloaded to the MyData client.
+    settings_downloaded = models.DateTimeField(null=True)
 
     class Meta:
         app_label = 'mydata'
@@ -122,8 +131,8 @@ class UploaderRegistrationRequest(models.Model):
 
     approved = models.BooleanField(default=False)
     approved_storage_box = models.ForeignKey(StorageBox,
-                                              null=True, blank=True,
-                                              default=None)
+                                             null=True, blank=True,
+                                             default=None)
     approver_comments = models.TextField(null=True, blank=True, default=None)
     approval_expiry = models.DateField(null=True, blank=True, default=None)
     approval_time = models.DateTimeField(null=True, blank=True, default=None)
@@ -140,3 +149,25 @@ class UploaderRegistrationRequest(models.Model):
             self.requester_name + " | " + \
             str(self.request_time) + " | " + \
             ("Approved" if self.approved else "Not approved")
+
+
+class UploaderSetting(models.Model):
+    '''
+    After MyData loads settings from a local MyData.cfg, it will
+    query the server for updated settings, stored in this model.
+    '''
+
+    uploader = models.ForeignKey(Uploader, related_name='settings')
+    key = models.TextField()
+    value = models.TextField()
+
+    def __unicode__(self):
+        return '-> '.join([
+            self.uploader.__unicode__(),
+            ': '.join([self.key or 'no key', self.value or 'no value'])
+        ])
+
+    class Meta:
+        app_label = 'mydata'
+        verbose_name = 'UploaderSetting'
+        verbose_name_plural = 'UploaderSettings'
