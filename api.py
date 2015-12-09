@@ -119,12 +119,25 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         authentication = tardis.tardis_portal.api.default_authentication
         authorization = ACLAuthorization()
         queryset = Uploader.objects.all()
-        fields = ['id', 'name', 'settings_updated', 'settings_downloaded']
         filtering = {
             'uuid': ('exact', ),
             'name': ('exact', ),
         }
         always_return_data = True
+
+    def dehydrate(self, bundle):
+        '''
+        We want to be able to upload some fields to give MyTardis sys admins
+        info about the client machine MyData is running on, but we don't
+        want those fields to be available for download, so we remove them
+        here.
+        '''
+        accessible_keys = ['id', 'name', 'settings_updated',
+                           'settings_downloaded']
+        for key in bundle.data.keys():
+            if key not in accessible_keys:
+                del(bundle.data[key])
+        return bundle
 
     def obj_create(self, bundle, **kwargs):
         bundle.data['created_time'] = datetime.now()
