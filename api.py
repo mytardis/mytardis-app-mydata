@@ -92,9 +92,15 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         Uploaders should only be able to update the uploader record whose
         UUID matches theirs (if it exists).
         '''
-        if bundle.request.user.is_authenticated() and \
-                isinstance(bundle.obj, Uploader):
-            return bundle.data['uuid'] == bundle.obj.uuid
+        authuser = bundle.request.user
+        authenticated = authuser.is_authenticated()
+        is_facility_manager = authenticated and \
+            len(facilities_managed_by(authuser)) > 0
+        if isinstance(bundle.obj, Uploader):
+            return is_facility_manager and \
+                bundle.data['uuid'] == bundle.obj.uuid
+        elif isinstance(bundle.obj, UploaderSetting):
+            return is_facility_manager
         return super(ACLAuthorization, self).update_detail(object_list, bundle)
 
     def delete_list(self, object_list, bundle):
