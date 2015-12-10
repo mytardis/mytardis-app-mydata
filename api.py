@@ -138,7 +138,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         want those fields to be available for download, so we remove them
         here.
         '''
-        accessible_keys = ['id', 'name', 'settings',
+        accessible_keys = ['id', 'resource_uri', 'name', 'settings',
                            'settings_updated', 'settings_downloaded']
         for key in bundle.data.keys():
             if key not in accessible_keys:
