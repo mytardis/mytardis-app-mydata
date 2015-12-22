@@ -159,7 +159,7 @@ class UploaderSetting(models.Model):
 
     uploader = models.ForeignKey(Uploader, related_name='settings')
     key = models.TextField()
-    value = models.TextField()
+    value = models.TextField(blank=True)
 
     def __unicode__(self):
         return '-> '.join([
