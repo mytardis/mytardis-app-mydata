@@ -163,6 +163,8 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                                                        value=setting['value'])
                 uploader_setting.save()
             del(bundle.data['settings'])
+            bundle.obj.settings_updated = datetime.now()
+            bundle.obj.save()
 
         return super(UploaderAppResource, self).hydrate_m2m(bundle)
 
