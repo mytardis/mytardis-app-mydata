@@ -19,7 +19,7 @@
     "fields": 
     {
       "name": "uploader",
-      "data_type": 4,
+      "data_type": 2,
       "is_searchable": false,
       "choices": "",
       "comparison_type": 1,

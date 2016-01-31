@@ -247,6 +247,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
         super(UploaderRegistrationRequestAppResource,
               self).save_related(bundle)
 
+
 class UploaderSettingAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     uploader = fields.ForeignKey(
         'tardis.apps.mydata.api.UploaderAppResource',
@@ -445,33 +446,6 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
 
         return super(ExperimentAppResource, self).obj_get_list(bundle,
                                                                **kwargs)
-
-    def save_m2m(self, bundle):
-        '''
-        MyData POSTs a UUID to identify the uploader (MyData instance)
-        associated with this experiment.  Below, we find the Uploader
-        model object which has that UUID.
-        '''
-        super(ExperimentAppResource, self).save_m2m(bundle)
-        exp = bundle.obj
-        mydata_exp_schema = \
-            Schema.objects.filter(namespace='http://mytardis.org/schemas'
-                                  '/mydata/defaultexperiment').first()
-        if mydata_exp_schema is None:
-            return
-        mydata_exp_pset = \
-            ExperimentParameterSet.objects.get(schema=mydata_exp_schema,
-                                               experiment=exp)
-        uploader_par_name = \
-            ParameterName.objects.get(schema=mydata_exp_schema,
-                                      name='uploader')
-        uploader_param = \
-            ExperimentParameter.objects.get(parameterset=mydata_exp_pset,
-                                            name=uploader_par_name)
-        uploader = Uploader.objects.get(uuid=uploader_param.string_value)
-        uploader_param.link_id = uploader.id
-        uploader_param.link_ct = uploader.get_ct()
-        uploader_param.save()
 
 
 class DataFileAppResource(tardis.tardis_portal.api.DataFileResource):
