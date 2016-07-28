@@ -468,14 +468,27 @@ class DataFileAppResource(tardis.tardis_portal.api.DataFileResource):
             # new path
             datafile = bundle.obj
             try:
-                ip = get_ip(bundle.request)
-                uploader = Uploader.objects\
-                    .filter(wan_ip_address=ip,
-                            instruments__id=datafile.dataset.instrument.id)\
-                    .first()
-                uploader_registration_request = \
-                    UploaderRegistrationRequest.objects.get(uploader=uploader)
-                sbox = uploader_registration_request.approved_storage_box
+                if 'uploader_uuid' in bundle.data and \
+                        'requester_key_fingerprint' in bundle.data:
+                    uploader_uuid = bundle.data['uploader_uuid']
+                    fingerprint = bundle.data['requester_key_fingerprint']
+                    uploader = Uploader.objects.get(uuid=uploader_uuid)
+                    uploader_registration_request = \
+                        UploaderRegistrationRequest.objects.get(
+                            uploader=uploader,
+                            requester_key_fingerprint=fingerprint)
+                    sbox = uploader_registration_request.approved_storage_box
+                else:
+                    ip = get_ip(bundle.request)
+                    instrument_id = datafile.dataset.instrument.id
+                    uploader = Uploader.objects\
+                        .filter(wan_ip_address=ip,
+                                instruments__id=instrument_id)\
+                        .first()
+                    uploader_registration_request = \
+                        UploaderRegistrationRequest.objects\
+                        .get(uploader=uploader)
+                    sbox = uploader_registration_request.approved_storage_box
             except:
                 logger.warning(traceback.format_exc())
                 sbox = datafile.get_receiving_storage_box()
