@@ -17,6 +17,7 @@ from tastypie.constants import ALL_WITH_RELATIONS
 from ipware.ip import get_ip
 
 import tardis.tardis_portal.api
+from tardis.tardis_portal.auth.decorators import has_datafile_access
 from tardis.tardis_portal.models.facility import facilities_managed_by
 from tardis.tardis_portal.models.experiment import Experiment
 from tardis.tardis_portal.models.parameters import Schema
@@ -56,6 +57,9 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             return super(ACLAuthorization, self).read_list(object_list, bundle)
 
     def read_detail(self, object_list, bundle):  # noqa # too complex
+        if bundle.request.user.is_authenticated() and \
+           bundle.request.user.is_superuser:
+            return True
         authuser = bundle.request.user
         authenticated = authuser.is_authenticated()
         is_facility_manager = authenticated and \
@@ -64,6 +68,8 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             return is_facility_manager
         elif isinstance(bundle.obj, UploaderRegistrationRequest):
             return is_facility_manager
+        elif isinstance(bundle.obj, DataFileObject):
+            return has_datafile_access(bundle.request, bundle.obj.datafile.id)
         else:
             return super(ACLAuthorization, self).read_detail(object_list,
                                                              bundle)
@@ -501,3 +507,30 @@ class DataFileAppResource(tardis.tardis_portal.api.DataFileResource):
             dfo.save()
             self.temp_url = dfo.get_full_path()
         return retval
+
+
+class ReplicaAppResource(tardis.tardis_portal.api.ReplicaResource):
+    '''Extends MyTardis's API for DFOs, adding in the size as measured
+    by file_object.size
+    '''
+    class Meta(tardis.tardis_portal.api.ReplicaResource.Meta):
+        # This will be mapped to mydata_replica by MyTardis's urls.py:
+        resource_name = 'replica'
+        authorization = ACLAuthorization()
+        queryset = DataFileObject.objects.all()
+        filtering = {
+            'verified': ('exact',),
+            'url': ('exact', 'startswith'),
+        }
+
+    def dehydrate(self, bundle):
+        dfo = bundle.obj
+        bundle.data['location'] = dfo.storage_box.name
+        try:
+            file_object_size = getattr(getattr(dfo, 'file_object', None), 'size', None)
+        except AttributeError:
+            file_object_size = None
+        except IOError:
+            file_object_size = None
+        bundle.data['size'] = file_object_size
+        return bundle
