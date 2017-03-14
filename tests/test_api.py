@@ -20,7 +20,6 @@ from tastypie.test import ResourceTestCase
 
 from tardis.tardis_portal.auth.authservice import AuthService
 from tardis.tardis_portal.auth.localdb_auth import django_user
-from tardis.tardis_portal.models import UserProfile
 from tardis.tardis_portal.models import Facility
 from tardis.tardis_portal.models import Instrument
 
@@ -45,7 +44,6 @@ class MyTardisResourceTestCase(ResourceTestCase):
                        'last_name': 'MyTardis API',
                        'email': 'api_test@mytardis.org'},
             auth_method="None")
-        self.user_profile = UserProfile(user=self.user).save()
         self.testgroup = Group(name="Test Group")
         self.testgroup.save()
         self.testgroup.user_set.add(self.user)
