@@ -11,9 +11,12 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.mail import get_connection
+from django.db import IntegrityError
+from django.http import HttpResponse
 from django.template import Context
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
+from tastypie.exceptions import ImmediateHttpResponse
 from ipware.ip import get_ip
 
 import tardis.tardis_portal.api
@@ -467,8 +470,18 @@ class DataFileAppResource(tardis.tardis_portal.api.DataFileResource):
         resource_name = 'dataset_file'
 
     def obj_create(self, bundle, **kwargs):
-        retval = super(tardis.tardis_portal.api.DataFileResource, self)\
-            .obj_create(bundle, **kwargs)
+        '''
+        Creates a new DataFile object from the provided bundle.data dict.
+
+        If a duplicate key error occurs, responds with HTTP Error 409: CONFLICT
+        '''
+        try:
+            retval = super(tardis.tardis_portal.api.DataFileResource, self)\
+                .obj_create(bundle, **kwargs)
+        except IntegrityError as err:
+            if "duplicate key" in str(err):
+                raise ImmediateHttpResponse(HttpResponse(status=409))
+            raise
         if 'replicas' not in bundle.data or not bundle.data['replicas']:
             # no replica specified: return upload path and create dfo for
             # new path
@@ -527,7 +540,8 @@ class ReplicaAppResource(tardis.tardis_portal.api.ReplicaResource):
         dfo = bundle.obj
         bundle.data['location'] = dfo.storage_box.name
         try:
-            file_object_size = getattr(getattr(dfo, 'file_object', None), 'size', None)
+            file_object_size = getattr(
+                getattr(dfo, 'file_object', None), 'size', None)
         except AttributeError:
             file_object_size = None
         except IOError:
