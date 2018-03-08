@@ -615,6 +615,16 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         return super(DataFileAppResource, self).put_detail(request, **kwargs)
 
+    def obj_get_list(self, bundle, **kwargs):
+        '''
+        Ensure that DataFile queries (filtering by filename,
+        directory and dataset ID) don't return duplicate results,
+        even if the dataset belongs to multiple experiments.
+        '''
+        obj_list = super(DataFileAppResource, self).obj_get_list(
+            bundle, **kwargs)
+        return obj_list.order_by('id').distinct('id')
+
 
 class ReplicaAppResource(tardis.tardis_portal.api.ReplicaResource):
     '''Extends MyTardis's API for DFOs, adding in the size as measured
