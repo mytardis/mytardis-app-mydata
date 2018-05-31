@@ -33,9 +33,9 @@ from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
 from tardis.tardis_portal.models.datafile import compute_checksums
 
-from models.uploader import Uploader
-from models.uploader import UploaderRegistrationRequest
-from models.uploader import UploaderSetting
+from .models.uploader import Uploader
+from .models.uploader import UploaderRegistrationRequest
+from .models.uploader import UploaderSetting
 
 logger = logging.getLogger(__name__)
 
@@ -77,12 +77,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             return is_facility_manager
         elif isinstance(bundle.obj, DataFileObject):
             return has_datafile_access(bundle.request, bundle.obj.datafile.id)
-        else:
-            return super(ACLAuthorization, self).read_detail(object_list,
-                                                             bundle)
-
-    def create_list(self, object_list, bundle):
-        return super(ACLAuthorization, self).create_list(object_list, bundle)
+        return super(ACLAuthorization, self).read_detail(object_list, bundle)
 
     def create_detail(self, object_list, bundle):
         authuser = bundle.request.user
@@ -96,9 +91,6 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         elif isinstance(bundle.obj, UploaderSetting):
             return is_facility_manager
         return super(ACLAuthorization, self).create_detail(object_list, bundle)
-
-    def update_list(self, object_list, bundle):
-        return super(ACLAuthorization, self).update_list(object_list, bundle)
 
     def update_detail(self, object_list, bundle):
         '''
@@ -115,12 +107,6 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         elif isinstance(bundle.obj, UploaderSetting):
             return is_facility_manager
         return super(ACLAuthorization, self).update_detail(object_list, bundle)
-
-    def delete_list(self, object_list, bundle):
-        return super(ACLAuthorization, self).delete_list(object_list, bundle)
-
-    def delete_detail(self, object_list, bundle):
-        return super(ACLAuthorization, self).delete_detail(object_list, bundle)
 
 
 class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
