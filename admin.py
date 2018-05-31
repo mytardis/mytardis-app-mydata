@@ -2,14 +2,16 @@ from django.contrib import admin
 from django import forms
 from django.forms import TextInput
 
-import models
+from .models import Uploader
+from .models import UploaderRegistrationRequest
+from .models import UploaderSetting
 
 
 class UploaderSettingInlineForm(forms.ModelForm):
 
     class Meta:
         fields = '__all__'
-        model = models.UploaderSetting
+        model = UploaderSetting
         widgets = {
             'key': TextInput(attrs={'size': 40}),
             'value': TextInput(attrs={'size': 80})
@@ -17,7 +19,7 @@ class UploaderSettingInlineForm(forms.ModelForm):
 
 
 class UploaderSettingInline(admin.TabularInline):
-    model = models.UploaderSetting
+    model = UploaderSetting
     extra = 0
     form = UploaderSettingInlineForm
 
@@ -26,7 +28,7 @@ class UploaderForm(forms.ModelForm):
 
     class Meta:
         fields = '__all__'
-        model = models.Uploader
+        model = Uploader
 
 
 class UploaderAdmin(admin.ModelAdmin):
@@ -34,6 +36,6 @@ class UploaderAdmin(admin.ModelAdmin):
     form = UploaderForm
 
 
-admin.site.register(models.Uploader, UploaderAdmin)
-admin.site.register(models.UploaderRegistrationRequest)
-admin.site.register(models.UploaderSetting)
+admin.site.register(Uploader, UploaderAdmin)
+admin.site.register(UploaderRegistrationRequest)
+admin.site.register(UploaderSetting)
