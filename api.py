@@ -322,13 +322,13 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                 if folder_structure.startswith('Username /'):
                     try:
                         user_to_match = \
-                            User.objects.get(username=user_folder_name)
+                            User.objects.get(username=user_folder_name, is_active=True)
                     except User.DoesNotExist:
                         user_to_match = UnknownUser(username=user_folder_name)
                 elif folder_structure.startswith('Email /'):
                     try:
                         user_to_match = \
-                            User.objects.get(email__iexact=user_folder_name)
+                            User.objects.get(email__iexact=user_folder_name, is_active=True)
                     except User.DoesNotExist:
                         user_to_match = UnknownUser(email=user_folder_name)
 
@@ -395,13 +395,13 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                 if folder_structure.startswith('Username /'):
                     try:
                         user_to_match = \
-                            User.objects.get(username=user_folder_name)
+                            User.objects.get(username=user_folder_name, is_active=True)
                     except User.DoesNotExist:
                         user_to_match = UnknownUser(username=user_folder_name)
                 elif folder_structure.startswith('Email /'):
                     try:
                         user_to_match = \
-                            User.objects.get(email__iexact=user_folder_name)
+                            User.objects.get(email__iexact=user_folder_name, is_active=True)
                     except User.DoesNotExist:
                         user_to_match = UnknownUser(email=user_folder_name)
 
