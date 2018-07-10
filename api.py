@@ -609,7 +609,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         '''
         obj_list = super(DataFileAppResource, self).obj_get_list(
             bundle, **kwargs)
-        return obj_list.order_by('id').distinct('id')
+        return obj_list.order_by('id').distinct()
 
 
 class ReplicaAppResource(tardis.tardis_portal.api.ReplicaResource):
