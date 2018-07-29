@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from tardis.tardis_portal.models import StorageBox
 from tardis.tardis_portal.models import Instrument
 
+
 class Uploader(models.Model):
     '''
     Represents a PC whose user(s) have expressed interest in
@@ -121,7 +122,7 @@ class UploaderRegistrationRequest(models.Model):
     each having its own ~/.ssh/MyData private key.
     '''
 
-    uploader = models.ForeignKey(Uploader)
+    uploader = models.ForeignKey(Uploader, on_delete=models.CASCADE)
 
     requester_name = models.CharField(max_length=64)
     requester_email = models.CharField(max_length=64)
@@ -130,9 +131,9 @@ class UploaderRegistrationRequest(models.Model):
     request_time = models.DateTimeField(null=True, blank=True)
 
     approved = models.BooleanField(default=False)
-    approved_storage_box = models.ForeignKey(StorageBox,
-                                             null=True, blank=True,
-                                             default=None)
+    approved_storage_box = models.ForeignKey(
+        StorageBox, null=True, blank=True, default=None,
+        on_delete=models.CASCADE)
     approver_comments = models.TextField(null=True, blank=True, default=None)
     approval_expiry = models.DateField(null=True, blank=True, default=None)
     approval_time = models.DateTimeField(null=True, blank=True, default=None)
@@ -157,7 +158,8 @@ class UploaderSetting(models.Model):
     query the server for updated settings, stored in this model.
     '''
 
-    uploader = models.ForeignKey(Uploader, related_name='settings')
+    uploader = models.ForeignKey(
+        Uploader, related_name='settings', on_delete=models.CASCADE)
     key = models.TextField()
     value = models.TextField(blank=True)
 
