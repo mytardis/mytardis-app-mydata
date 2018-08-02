@@ -36,6 +36,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='uploadersetting',
             name='uploader',
-            field=models.ForeignKey(related_name='settings', to='mydata.Uploader'),
+            field=models.ForeignKey(related_name='settings', to='mydata.Uploader', on_delete=models.CASCADE),
         ),
     ]

@@ -63,8 +63,9 @@ class Migration(migrations.Migration):
                 ('approver_comments', models.TextField(default=None, null=True, blank=True)),
                 ('approval_expiry', models.DateField(default=None, null=True, blank=True)),
                 ('approval_time', models.DateTimeField(default=None, null=True, blank=True)),
-                ('approved_storage_box', models.ForeignKey(default=None, blank=True, to='tardis_portal.StorageBox', null=True)),
-                ('uploader', models.ForeignKey(to='mydata.Uploader')),
+                ('approved_storage_box', models.ForeignKey(default=None, blank=True, to='tardis_portal.StorageBox', null=True,
+                                                           on_delete=models.CASCADE)),
+                ('uploader', models.ForeignKey(to='mydata.Uploader', on_delete=models.CASCADE)),
             ],
             options={
                 'verbose_name_plural': 'UploaderRegistrationRequests',
