@@ -59,19 +59,18 @@ class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):
 class UploaderAppResourceTest(MyTardisResourceTestCase):
     def setUp(self):
         super(UploaderAppResourceTest, self).setUp()
-        self.uploader = Uploader(interface='Ethernet', mac_address='ABCDEFG')
+        self.uploader = Uploader(name='Test Uploader')
         self.uploader.save()
         self.uploader.instruments.add(self.testinstrument)
 
     def test_get_uploader_by_id(self):
         expected_output = {
             "id": 1,
-            "interface": "Ethernet",
-            "mac_address": "ABCDEFG",
+            "name": "Test Uploader"
         }
         output = self.api_client.get('/api/v1/mydata_uploader/1/',
                                      authentication=self.get_credentials())
         returned_data = json.loads(output.content)
         for key, value in expected_output.iteritems():
-            self.assertTrue(key in returned_data)
+            self.assertIn(key, returned_data)
             self.assertEqual(returned_data[key], value)
