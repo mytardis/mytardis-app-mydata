@@ -5,29 +5,22 @@ Testing the tastypie-based mytardis api
 .. moduleauthor:: James Wettenhall <james.wettenhall@monash.edu>
 '''
 import json
-import os
-import tempfile
-import urllib
 
-from django.contrib.auth.models import Permission
+from tastypie.test import ResourceTestCaseMixin
+
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 
-from django.test.client import Client
 from django.test import TestCase
 
-from tastypie.test import ResourceTestCase
-
 from tardis.tardis_portal.auth.authservice import AuthService
-from tardis.tardis_portal.auth.localdb_auth import django_user
 from tardis.tardis_portal.models import Facility
 from tardis.tardis_portal.models import Instrument
 
 from tardis.apps.mydata.models import Uploader
-from tardis.apps.mydata.models import UploaderRegistrationRequest
 
 
-class MyTardisResourceTestCase(ResourceTestCase):
+class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):
     '''
     abstract class without tests to combine common settings in one place
     '''
