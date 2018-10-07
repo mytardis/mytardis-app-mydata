@@ -14,7 +14,6 @@ from django.core import mail
 from django.core.mail import get_connection
 from django.db import IntegrityError
 from django.http import HttpResponse
-from django.template import Context
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
 from tastypie.exceptions import ImmediateHttpResponse
@@ -26,7 +25,6 @@ from tardis.tardis_portal.auth.decorators import has_datafile_access
 from tardis.tardis_portal.models.facility import facilities_managed_by
 from tardis.tardis_portal.models.experiment import Experiment
 from tardis.tardis_portal.models.parameters import Schema
-from tardis.tardis_portal.models.parameters import ParameterName
 from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 from tardis.tardis_portal.models.datafile import DataFile
@@ -180,7 +178,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         # Workaround for
         # https://github.com/toastdriven/django-tastypie/issues/390 :
         if hasattr(bundle, "obj_update_done"):
-            return
+            return bundle
         bundle.data['updated_time'] = datetime.now()
         ip = get_ip(bundle.request)
         if ip is not None:

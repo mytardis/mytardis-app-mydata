@@ -2,7 +2,6 @@ import os
 import uuid
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 
 from tardis.tardis_portal.storage import MyTardisLocalFileSystemStorage
 
