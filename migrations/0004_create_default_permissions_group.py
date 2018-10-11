@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+from django.contrib.auth.management import create_permissions
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 
@@ -11,6 +12,13 @@ def create_default_permissions_group(apps, schema_editor):
     '''
     Create the 'mydata-default-permissions' group
     '''
+    # First, we need to ensure that permissions have been created,
+    # then we can create a group and assign those permissions to it:
+    for app_config in apps.get_app_configs():
+        app_config.models_module = True
+        create_permissions(app_config, apps=apps, verbosity=0)
+        app_config.models_module = None
+
     group = Group.objects.create(name='mydata-default-permissions')
     tardis_portal_app_permissions = [
         'add_instrument', 'change_instrument', 'add_experiment',
