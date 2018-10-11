@@ -34,6 +34,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('mydata', '0003_uploadersetting_blank'),
+        ('auth', '0008_alter_user_username_max_length')
     ]
 
     operations = [
