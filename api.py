@@ -357,9 +357,10 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
                             exp_param.name.name == 'group_folder_name' and \
                             exp_param.string_value == group_folder_name:
                         matched_group = True
-                if (need_to_match_user and matched_user) or \
-                        (need_to_match_group and matched_group) or \
-                        (not need_to_match_user and not need_to_match_group):
+                is_mu = need_to_match_user and matched_user
+                is_mg = need_to_match_group and matched_group
+                is_nah = not need_to_match_user and not need_to_match_group
+                if is_mu or is_mg or is_nah:
                     experiment_id = exp_pset.experiment.id
                     exp_list = Experiment.objects.filter(pk=experiment_id)
                     if exp_list[0] in Experiment.safe.all(bundle.request.user):
