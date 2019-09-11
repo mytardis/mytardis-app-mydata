@@ -1,10 +1,12 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
+from django.utils.encoding import python_2_unicode_compatible
 
-from tardis.tardis_portal.models import StorageBox
-from tardis.tardis_portal.models import Instrument
+from tardis.tardis_portal.models.storage import StorageBox
+from tardis.tardis_portal.models.instrument import Instrument
 
 
+@python_2_unicode_compatible
 class Uploader(models.Model):
     '''
     Represents a PC whose user(s) have expressed interest in
@@ -103,13 +105,14 @@ class Uploader(models.Model):
         app_label = 'mydata'
         verbose_name_plural = 'Uploaders'
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name + " | " + self.uuid
 
     def get_ct(self):
         return ContentType.objects.get_for_model(self)
 
 
+@python_2_unicode_compatible
 class UploaderRegistrationRequest(models.Model):
     '''
     Represents a request to register a new instrument PC with this
@@ -143,7 +146,7 @@ class UploaderRegistrationRequest(models.Model):
         verbose_name_plural = 'UploaderRegistrationRequests'
         unique_together = ['uploader', 'requester_key_fingerprint']
 
-    def __unicode__(self):
+    def __str__(self):
         return self.uploader.name + " | " + \
             self.uploader.interface + " | " + \
             self.requester_key_fingerprint + " | " + \
@@ -152,6 +155,7 @@ class UploaderRegistrationRequest(models.Model):
             ("Approved" if self.approved else "Not approved")
 
 
+@python_2_unicode_compatible
 class UploaderSetting(models.Model):
     '''
     After MyData loads settings from a local MyData.cfg, it will
@@ -163,9 +167,9 @@ class UploaderSetting(models.Model):
     key = models.TextField()
     value = models.TextField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '-> '.join([
-            self.uploader.__unicode__(),
+            self.uploader.__str__(),
             ': '.join([self.key or 'no key', self.value or 'no value'])
         ])
 

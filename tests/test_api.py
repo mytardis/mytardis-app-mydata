@@ -14,10 +14,10 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 
 from tardis.tardis_portal.auth.authservice import AuthService
-from tardis.tardis_portal.models import Facility
-from tardis.tardis_portal.models import Instrument
+from tardis.tardis_portal.models.facility import Facility
+from tardis.tardis_portal.models.instrument import Instrument
 
-from tardis.apps.mydata.models import Uploader
+from tardis.apps.mydata.models.uploader import Uploader
 
 
 class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):

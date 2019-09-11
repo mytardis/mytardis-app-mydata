@@ -1,4 +1,3 @@
-
-from .uploader import Uploader
-from .uploader import UploaderRegistrationRequest
-from .uploader import UploaderSetting
+"""
+tardis/apps/mydata/models/__init__.py
+"""

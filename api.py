@@ -50,16 +50,15 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             if is_facility_manager:
                 return object_list
             return []
-        elif isinstance(bundle.obj, UploaderSetting):
+        if isinstance(bundle.obj, UploaderSetting):
             if is_facility_manager:
                 return object_list
             return []
-        elif isinstance(bundle.obj, UploaderRegistrationRequest):
+        if isinstance(bundle.obj, UploaderRegistrationRequest):
             if is_facility_manager:
                 return object_list
             return []
-        else:
-            return super(ACLAuthorization, self).read_list(object_list, bundle)
+        return super(ACLAuthorization, self).read_list(object_list, bundle)
 
     def read_detail(self, object_list, bundle):  # noqa # too complex
         if bundle.request.user.is_authenticated() and \
@@ -71,9 +70,9 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
             return is_facility_manager
-        elif isinstance(bundle.obj, UploaderRegistrationRequest):
+        if isinstance(bundle.obj, UploaderRegistrationRequest):
             return is_facility_manager
-        elif isinstance(bundle.obj, DataFileObject):
+        if isinstance(bundle.obj, DataFileObject):
             return has_datafile_access(bundle.request, bundle.obj.datafile.id)
         return super(ACLAuthorization, self).read_detail(object_list, bundle)
 
@@ -84,9 +83,9 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
             return is_facility_manager
-        elif isinstance(bundle.obj, UploaderRegistrationRequest):
+        if isinstance(bundle.obj, UploaderRegistrationRequest):
             return is_facility_manager
-        elif isinstance(bundle.obj, UploaderSetting):
+        if isinstance(bundle.obj, UploaderSetting):
             return is_facility_manager
         return super(ACLAuthorization, self).create_detail(object_list, bundle)
 
@@ -102,7 +101,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         if isinstance(bundle.obj, Uploader):
             return is_facility_manager and \
                 bundle.data['uuid'] == bundle.obj.uuid
-        elif isinstance(bundle.obj, UploaderSetting):
+        if isinstance(bundle.obj, UploaderSetting):
             return is_facility_manager
         return super(ACLAuthorization, self).update_detail(object_list, bundle)
 
@@ -112,7 +111,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         fields.ManyToManyField(tardis.tardis_portal.api.InstrumentResource,
                                'instruments', null=True, full=True)
     settings = fields.ToManyField(
-        'tardis.apps.mydata.api.UploaderSettingAppResource',
+        tardis.apps.mydata.api.UploaderSettingAppResource,
         'settings',
         related_name='uploader',
         full=True, null=True)
@@ -191,9 +190,9 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
                                              .MyTardisModelResource):
     uploader = fields.ForeignKey(
-        'tardis.apps.mydata.api.UploaderAppResource', 'uploader')
+        tardis.apps.mydata.api.UploaderAppResource, 'uploader')
     approved_storage_box = fields.ForeignKey(
-        'tardis.tardis_portal.api.StorageBoxResource',
+        tardis.tardis_portal.api.StorageBoxResource,
         'approved_storage_box', null=True, full=True)
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
@@ -247,7 +246,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
 
 class UploaderSettingAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     uploader = fields.ForeignKey(
-        'tardis.apps.mydata.api.UploaderAppResource',
+        tardis.apps.mydata.api.UploaderAppResource,
         'uploader',
         related_name='settings',
         full=False)
@@ -461,7 +460,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     dataset = fields.ForeignKey(tardis.tardis_portal.api.DatasetResource, 'dataset')
     datafile = fields.FileField()
     replicas = fields.ToManyField(
-        'tardis.tardis_portal.api.ReplicaResource',
+        tardis.tardis_portal.api.ReplicaResource,
         'file_objects',
         related_name='datafile', full=True, null=True)
     temp_url = None

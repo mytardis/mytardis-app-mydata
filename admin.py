@@ -2,9 +2,9 @@ from django.contrib import admin
 from django import forms
 from django.forms import TextInput
 
-from .models import Uploader
-from .models import UploaderRegistrationRequest
-from .models import UploaderSetting
+from .models.uploader import Uploader
+from .models.uploader import UploaderRegistrationRequest
+from .models.uploader import UploaderSetting
 
 
 class UploaderSettingInlineForm(forms.ModelForm):
