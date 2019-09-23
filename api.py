@@ -189,8 +189,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
 class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
                                              .MyTardisModelResource):
-    uploader = fields.ForeignKey(
-        'tardis.apps.mydata.api.UploaderAppResource', 'uploader')
+    uploader = fields.ForeignKey(UploaderAppResource, 'uploader')
     approved_storage_box = fields.ForeignKey(
         tardis.tardis_portal.api.StorageBoxResource,
         'approved_storage_box', null=True, full=True)
@@ -246,7 +245,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
 
 class UploaderSettingAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     uploader = fields.ForeignKey(
-        'tardis.apps.mydata.api.UploaderAppResource',
+        UploaderAppResource,
         'uploader',
         related_name='settings',
         full=False)
