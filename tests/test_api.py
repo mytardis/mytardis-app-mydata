@@ -17,7 +17,7 @@ from tardis.tardis_portal.auth.authservice import AuthService
 from tardis.tardis_portal.models.facility import Facility
 from tardis.tardis_portal.models.instrument import Instrument
 
-from tardis.apps.mydata.models.uploader import Uploader
+from ..models.uploader import Uploader
 
 
 class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):
