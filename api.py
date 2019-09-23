@@ -136,7 +136,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         '''
         accessible_keys = ['id', 'resource_uri', 'name', 'settings',
                            'settings_updated', 'settings_downloaded']
-        for key in bundle.data.keys():
+        for key in list(bundle.data.keys()):
             if key not in accessible_keys:
                 del(bundle.data[key])
         return bundle
