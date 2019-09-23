@@ -111,7 +111,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         fields.ManyToManyField(tardis.tardis_portal.api.InstrumentResource,
                                'instruments', null=True, full=True)
     settings = fields.ToManyField(
-        tardis.apps.mydata.api.UploaderSettingAppResource,
+        'tardis.apps.mydata.api.UploaderSettingAppResource',
         'settings',
         related_name='uploader',
         full=True, null=True)
@@ -190,7 +190,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
                                              .MyTardisModelResource):
     uploader = fields.ForeignKey(
-        tardis.apps.mydata.api.UploaderAppResource, 'uploader')
+        'tardis.apps.mydata.api.UploaderAppResource', 'uploader')
     approved_storage_box = fields.ForeignKey(
         tardis.tardis_portal.api.StorageBoxResource,
         'approved_storage_box', null=True, full=True)
@@ -246,7 +246,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
 
 class UploaderSettingAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     uploader = fields.ForeignKey(
-        tardis.apps.mydata.api.UploaderAppResource,
+        'tardis.apps.mydata.api.UploaderAppResource',
         'uploader',
         related_name='settings',
         full=False)
