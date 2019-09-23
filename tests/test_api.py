@@ -71,6 +71,6 @@ class UploaderAppResourceTest(MyTardisResourceTestCase):
         output = self.api_client.get('/api/v1/mydata_uploader/1/',
                                      authentication=self.get_credentials())
         returned_data = json.loads(output.content)
-        for key, value in expected_output.iteritems():
+        for key, value in expected_output.items():
             self.assertIn(key, returned_data)
             self.assertEqual(returned_data[key], value)
