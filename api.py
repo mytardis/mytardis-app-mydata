@@ -4,6 +4,7 @@ Additions to MyTardis's REST API
 """
 import logging
 import traceback
+import pytz
 from datetime import datetime
 
 from django.conf import settings
@@ -14,11 +15,13 @@ from django.core import mail
 from django.core.mail import get_connection
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.utils import trailing_slash
 from ipware.ip import get_ip
+from dateutil.parser import parse
 
 import tardis.tardis_portal.api
 from tardis.tardis_portal.auth.decorators import has_datafile_access
@@ -507,6 +510,13 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         If a duplicate key error occurs, responds with HTTP Error 409: CONFLICT
         '''
+        if settings.USE_TZ:
+            tz = pytz.timezone(settings.TIME_ZONE)
+            dst = settings.IS_DST
+            for k in ["created_time", "modification_time"]:
+                v = parse(bundle.data.get(k))
+                if not is_aware(v):
+                    bundle.data[k] = make_aware(v, tz, dst).isoformat()
         try:
             retval = super(DataFileAppResource, self).obj_create(bundle, **kwargs)
         except IntegrityError as err:
