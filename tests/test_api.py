@@ -96,6 +96,25 @@ class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):
         )
         self.uploader_request.save()
 
+        self.schema = Schema.objects.create(
+            namespace="http://schema.namespace/dataset/1",
+            type=Schema.DATASET
+        )
+
+        self.dataset = Dataset.objects.create(description="Test Dataset")
+        self.dataset.experiments.add(self.testexp)
+
+    def tearDown(self):
+        self.schema.delete()
+        self.dataset.delete()
+        self.uploader_request.delete()
+        self.uploader.delete()
+        self.testexp.delete()
+        self.testinstrument.delete()
+        self.testfacility.delete()
+        self.testgroup.delete()
+        self.user.delete()
+
     def get_credentials(self):
         return self.create_basic(username=self.username,
                                  password=self.password)
@@ -107,28 +126,19 @@ class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):
 
 class UploaderAppResourceTest(MyTardisResourceTestCase):
     def test_get_uploader_by_id(self):
-        expected_output = {
-            "id": 1,
-            "name": "Test Uploader"
-        }
-        output = self.api_client.get('/api/v1/mydata_uploader/1/',
-                                     authentication=self.get_credentials())
-        returned_data = json.loads(output.content)
-        for key, value in expected_output.items():
-            self.assertIn(key, returned_data)
-            self.assertEqual(returned_data[key], value)
+        response = self.api_client.get(
+            "/api/v1/mydata_uploader/%s/" % self.uploader.id,
+            authentication=self.get_credentials())
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        for k in ["id", "name"]:
+            self.assertIn(k, data)
+            self.assertEqual(data[k], getattr(self.uploader, k))
 
     def test_ambiguous_time_error(self):
         '''
         Test for ticket https://jira.apps.monash.edu/browse/SDM-411
         '''
-        self.schema = Schema.objects.create(
-            namespace="http://schema.namespace/dataset/1",
-            type=Schema.DATASET
-        )
-        self.dataset = Dataset.objects.create(description="Test Dataset")
-        self.dataset.experiments.add(self.testexp)
-
         payload = {
             "uploader_uuid": self.uploader_uuid,
             "requester_key_fingerprint": self.requester_key_fingerprint,
@@ -142,8 +152,9 @@ class UploaderAppResourceTest(MyTardisResourceTestCase):
             "created_time": "2019-04-07T01:24:07.692530",
             "modification_time": "2019-04-07T02:46:42.739467"
         }
-        response = self.api_client.post('/api/v1/mydata_dataset_file/',
-                                     data=payload,
-                                     authentication=self.get_credentials())
+        response = self.api_client.post(
+            "/api/v1/mydata_dataset_file/",
+            data=payload,
+            authentication=self.get_credentials())
 
         self.assertEqual(response.status_code, 201) # HTTP 201 Created
