@@ -4,8 +4,8 @@ Additions to MyTardis's REST API
 """
 import logging
 import traceback
-import pytz
 from datetime import datetime
+import pytz
 
 from django.conf import settings
 from django.conf.urls import url
