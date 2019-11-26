@@ -3,6 +3,7 @@
 Additions to MyTardis's REST API
 """
 import logging
+import os
 import traceback
 from datetime import datetime
 import pytz
@@ -12,6 +13,7 @@ from django.conf.urls import url
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core import mail
+from django.core.files.storage import FileSystemStorage, get_storage_class
 from django.core.mail import get_connection
 from django.db import IntegrityError
 from django.http import HttpResponse
@@ -120,6 +122,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         full=True, null=True)
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        object_class = Uploader
         resource_name = 'uploader'
         authentication = tardis.tardis_portal.api.default_authentication
         authorization = ACLAuthorization()
@@ -198,6 +201,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
         'approved_storage_box', null=True, full=True)
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        object_class = UploaderRegistrationRequest
         resource_name = 'uploaderregistrationrequest'
         authentication = tardis.tardis_portal.api.default_authentication
         authorization = ACLAuthorization()
@@ -254,6 +258,7 @@ class UploaderSettingAppResource(tardis.tardis_portal.api.MyTardisModelResource)
         full=False)
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        object_class = UploaderSetting
         resource_name = 'uploadersetting'
         authentication = tardis.tardis_portal.api.default_authentication
         authorization = ACLAuthorization()
@@ -559,6 +564,17 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 storage_box=sbox)
             dfo.create_set_uri()
             dfo.save()
+            storage_class = get_storage_class(dfo.storage_box.django_storage_class)
+            if issubclass(storage_class, FileSystemStorage):
+                # Try to ensure that the directory will exist for the client
+                # (MyData) to upload to.  If creating the directory fails, log
+                # an error, but don't raise an exception, because the client
+                # can still create the directory if necessary.
+                dfo_dir = os.path.dirname(dfo.get_full_path())
+                try:
+                    os.makedirs(dfo_dir, exist_ok=True)
+                except OSError:
+                    logger.exception('Failed to make dirs for %s' % dfo_dir)
             self.temp_url = dfo.get_full_path()
         return retval
 
