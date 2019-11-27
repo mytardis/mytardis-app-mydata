@@ -48,7 +48,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
     '''
     def read_list(self, object_list, bundle):  # noqa # too complex
         authuser = bundle.request.user
-        authenticated = authuser.is_authenticated()
+        authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
@@ -66,11 +66,11 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         return super(ACLAuthorization, self).read_list(object_list, bundle)
 
     def read_detail(self, object_list, bundle):  # noqa # too complex
-        if bundle.request.user.is_authenticated() and \
+        if bundle.request.user.is_authenticated and \
            bundle.request.user.is_superuser:
             return True
         authuser = bundle.request.user
-        authenticated = authuser.is_authenticated()
+        authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
@@ -83,7 +83,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
 
     def create_detail(self, object_list, bundle):
         authuser = bundle.request.user
-        authenticated = authuser.is_authenticated()
+        authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
@@ -100,7 +100,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         UUID matches theirs (if it exists).
         '''
         authuser = bundle.request.user
-        authenticated = authuser.is_authenticated()
+        authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
         if isinstance(bundle.obj, Uploader):
@@ -518,7 +518,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         '''
         if settings.USE_TZ:
             tz = pytz.timezone(settings.TIME_ZONE)
-            dst = settings.IS_DST
+            dst = getattr(settings, 'IS_DST', True)
             for k in ["created_time", "modification_time"]:
                 v = parse(bundle.data.get(k))
                 if not is_aware(v):
