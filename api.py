@@ -473,6 +473,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     temp_url = None
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        object_class = DataFile
         queryset = DataFile.objects.all()
         filtering = {
             'directory': ('exact', 'startswith'),
