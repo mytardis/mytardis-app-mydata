@@ -573,7 +573,8 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 # can still create the directory if necessary.
                 dfo_dir = os.path.dirname(dfo.get_full_path())
                 try:
-                    os.makedirs(dfo_dir, exist_ok=True)
+                    os.makedirs(dfo_dir, mode=0o770, exist_ok=True)
+                    os.chmod(dfo_dir, 0o770)
                 except OSError:
                     logger.exception('Failed to make dirs for %s' % dfo_dir)
             self.temp_url = dfo.get_full_path()
