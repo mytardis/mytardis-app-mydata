@@ -566,7 +566,8 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             dfo.create_set_uri()
             dfo.save()
             storage_class = get_storage_class(dfo.storage_box.django_storage_class)
-            if issubclass(storage_class, FileSystemStorage):
+            if getattr(settings, 'MYDATA_CREATE_DIRS', False) and \
+                    issubclass(storage_class, FileSystemStorage):
                 # Try to ensure that the directory will exist for the client
                 # (MyData) to upload to.  If creating the directory fails, log
                 # an error, but don't raise an exception, because the client
