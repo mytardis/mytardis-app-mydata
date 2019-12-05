@@ -35,7 +35,7 @@ from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
-from tardis.tardis_portal.models.datafile import compute_checksums
+from tardis.tardis_portal.models.datafile import compute_checksum
 
 from .models.uploader import Uploader
 from .models.uploader import UploaderRegistrationRequest
@@ -489,18 +489,25 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         resource_name = 'dataset_file'
 
     def hydrate(self, bundle):
+        if 'algorithm' not in bundle.data or 'checksum' not in bundle.data:
+            # support legacy clients
+            if 'md5sum' in bundle.data:
+                bundle.data['algorithm'] = 'md5'
+                bundle.data['checksum'] = bundle.data['md5sum']
+                del(bundle.data['md5sum'])
+            elif 'sha512sum' in bundle.data:
+                bundle.data['algorithm'] = 'sha512'
+                bundle.data['checksum'] = bundle.data['sha512sum']
+                del(bundle.data['sha512sum'])
         if 'attached_file' in bundle.data:
             # have POSTed file
             newfile = bundle.data['attached_file'][0]
-            compute_md5 = getattr(settings, 'COMPUTE_MD5', True)
-            compute_sha512 = getattr(settings, 'COMPUTE_SHA512', True)
-            if (compute_md5 and 'md5sum' not in bundle.data) or \
-                    (compute_sha512 and 'sha512sum' not in bundle.data):
-                checksums = compute_checksums(newfile, close_file=False)
-                if compute_md5:
-                    bundle.data['md5sum'] = checksums['md5sum']
-                if compute_sha512:
-                    bundle.data['sha512sum'] = checksums['sha512sum']
+            algorithm = getattr(settings, 'VERIFY_DEFAULT_ALGORITHM', 'md5')
+            bundle.data['algorithm'] = algorithm
+            bundle.data['checksum'] = compute_checksum(
+                newfile,
+                algorithm,
+                close_file=False)
 
             if 'replicas' in bundle.data:
                 for replica in bundle.data['replicas']:
@@ -509,6 +516,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 bundle.data['replicas'] = [{'file_object': newfile}]
 
             del(bundle.data['attached_file'])
+        print(bundle.data)
         return bundle
 
     def obj_create(self, bundle, **kwargs):
