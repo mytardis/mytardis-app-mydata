@@ -2,6 +2,7 @@
 """
 Additions to MyTardis's REST API
 """
+import json
 import logging
 import os
 import traceback
