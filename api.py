@@ -17,6 +17,7 @@ from django.core import mail
 from django.core.files.storage import FileSystemStorage, get_storage_class
 from django.core.mail import get_connection
 from django.db import IntegrityError
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
@@ -511,6 +512,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             del(bundle.data['attached_file'])
         return bundle
 
+    @transaction.atomic
     def obj_create(self, bundle, **kwargs):
         '''
         Creates a new DataFile object from the provided bundle.data dict.
