@@ -10,7 +10,7 @@ from tastypie.test import ResourceTestCaseMixin
 
 from django.contrib.auth.models import User, Group, Permission
 
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from tardis.tardis_portal.auth.authservice import AuthService
 from tardis.tardis_portal.auth.localdb_auth import django_user
@@ -25,7 +25,7 @@ from tardis.tardis_portal.models.storage import StorageBox
 from ...models.uploader import Uploader, UploaderRegistrationRequest
 
 
-class MyTardisResourceTestCase(ResourceTestCaseMixin, TestCase):
+class MyTardisResourceTestCase(ResourceTestCaseMixin, TransactionTestCase):
     '''
     abstract class without tests to combine common settings in one place
     '''
