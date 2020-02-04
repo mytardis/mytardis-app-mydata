@@ -521,7 +521,10 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             tz = pytz.timezone(settings.TIME_ZONE)
             dst = getattr(settings, 'IS_DST', True)
             for k in ["created_time", "modification_time"]:
-                v = parse(bundle.data.get(k))
+                time_str = bundle.data.get(k)
+                if not time_str:
+                    continue
+                v = parse(time_str)
                 if not is_aware(v):
                     bundle.data[k] = make_aware(v, tz, dst).isoformat()
         try:
