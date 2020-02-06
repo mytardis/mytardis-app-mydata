@@ -16,8 +16,8 @@ from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.files.storage import FileSystemStorage, get_storage_class
 from django.core.mail import get_connection
+from django.db.utils import DatabaseError
 from django.db import IntegrityError
-from django.db import transaction
 from django.http import HttpResponse
 from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
@@ -512,7 +512,60 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             del(bundle.data['attached_file'])
         return bundle
 
-    @transaction.atomic
+    def _create_dfo(self, bundle):
+        '''
+        Called by the obj_create method, this method creates a DataFileObject
+        when the POST body submitted to create a DataFile record doesn't
+        include any replicas.
+        '''
+        datafile = bundle.obj
+        try:
+            if 'uploader_uuid' in bundle.data and \
+                    'requester_key_fingerprint' in bundle.data:
+                uploader_uuid = bundle.data['uploader_uuid']
+                fingerprint = bundle.data['requester_key_fingerprint']
+                uploader = Uploader.objects.get(uuid=uploader_uuid)
+                uploader_registration_request = \
+                    UploaderRegistrationRequest.objects.get(
+                        uploader=uploader,
+                        requester_key_fingerprint=fingerprint)
+                sbox = uploader_registration_request.approved_storage_box
+            else:
+                ip = get_ip(bundle.request)
+                instrument_id = datafile.dataset.instrument.id
+                uploader = Uploader.objects\
+                    .filter(wan_ip_address=ip,
+                            instruments__id=instrument_id)\
+                    .first()
+                uploader_registration_request = \
+                    UploaderRegistrationRequest.objects\
+                    .get(uploader=uploader)
+                sbox = uploader_registration_request.approved_storage_box
+        except:
+            logger.warning(traceback.format_exc())
+            sbox = datafile.get_receiving_storage_box()
+        if sbox is None:
+            raise NotImplementedError
+        dfo = DataFileObject(
+            datafile=datafile,
+            storage_box=sbox)
+        dfo.create_set_uri()
+        dfo.save()
+        storage_class = get_storage_class(dfo.storage_box.django_storage_class)
+        if getattr(settings, 'MYDATA_CREATE_DIRS', False) and \
+                issubclass(storage_class, FileSystemStorage):
+            # Try to ensure that the directory will exist for the client
+            # (MyData) to upload to.  If creating the directory fails, log
+            # an error, but don't raise an exception, because the client
+            # can still create the directory if necessary.
+            dfo_dir = os.path.dirname(dfo.get_full_path())
+            try:
+                os.makedirs(dfo_dir, mode=0o770, exist_ok=True)
+                os.chmod(dfo_dir, 0o770)
+            except OSError:
+                logger.exception('Failed to make dirs for %s' % dfo_dir)
+        self.temp_url = dfo.get_full_path()
+
     def obj_create(self, bundle, **kwargs):
         '''
         Creates a new DataFile object from the provided bundle.data dict.
@@ -538,53 +591,17 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         if 'replicas' not in bundle.data or not bundle.data['replicas']:
             # no replica specified: return upload path and create dfo for
             # new path
-            datafile = bundle.obj
             try:
-                if 'uploader_uuid' in bundle.data and \
-                        'requester_key_fingerprint' in bundle.data:
-                    uploader_uuid = bundle.data['uploader_uuid']
-                    fingerprint = bundle.data['requester_key_fingerprint']
-                    uploader = Uploader.objects.get(uuid=uploader_uuid)
-                    uploader_registration_request = \
-                        UploaderRegistrationRequest.objects.get(
-                            uploader=uploader,
-                            requester_key_fingerprint=fingerprint)
-                    sbox = uploader_registration_request.approved_storage_box
-                else:
-                    ip = get_ip(bundle.request)
-                    instrument_id = datafile.dataset.instrument.id
-                    uploader = Uploader.objects\
-                        .filter(wan_ip_address=ip,
-                                instruments__id=instrument_id)\
-                        .first()
-                    uploader_registration_request = \
-                        UploaderRegistrationRequest.objects\
-                        .get(uploader=uploader)
-                    sbox = uploader_registration_request.approved_storage_box
-            except:
-                logger.warning(traceback.format_exc())
-                sbox = datafile.get_receiving_storage_box()
-            if sbox is None:
-                raise NotImplementedError
-            dfo = DataFileObject(
-                datafile=datafile,
-                storage_box=sbox)
-            dfo.create_set_uri()
-            dfo.save()
-            storage_class = get_storage_class(dfo.storage_box.django_storage_class)
-            if getattr(settings, 'MYDATA_CREATE_DIRS', False) and \
-                    issubclass(storage_class, FileSystemStorage):
-                # Try to ensure that the directory will exist for the client
-                # (MyData) to upload to.  If creating the directory fails, log
-                # an error, but don't raise an exception, because the client
-                # can still create the directory if necessary.
-                dfo_dir = os.path.dirname(dfo.get_full_path())
-                try:
-                    os.makedirs(dfo_dir, mode=0o770, exist_ok=True)
-                    os.chmod(dfo_dir, 0o770)
-                except OSError:
-                    logger.exception('Failed to make dirs for %s' % dfo_dir)
-            self.temp_url = dfo.get_full_path()
+                self._create_dfo(bundle)
+            except DatabaseError:
+                # Instead of catching a DatabaseError, we could decorate the
+                # obj_create method with @transaction.atomic, but this can
+                # affect API performance, given the high frequence of DataFile
+                # creation requests.
+
+                # Delete DataFile record, because DataFileObject creation failed:
+                bundle.obj.delete()
+                raise
         return retval
 
     def post_list(self, request, **kwargs):
