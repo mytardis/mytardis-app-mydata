@@ -596,11 +596,18 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             except DatabaseError:
                 # Instead of catching a DatabaseError, we could decorate the
                 # obj_create method with @transaction.atomic, but this can
-                # affect API performance, given the high frequence of DataFile
+                # affect API performance, given the high frequency of DataFile
                 # creation requests.
 
                 # Delete DataFile record, because DataFileObject creation failed:
                 bundle.obj.delete()
+
+                # The deletion above could fail with a subsequent database error,
+                # in which case an exception will be raised and the Tastypie API
+                # will return a 500 error *without* successfully rolling back the
+                # DataFile creation.  This try/except was implemented in response
+                # to intermittent database connection errors, in which case it
+                # seems likely that the DataFile deletion will succeed.
                 raise
         return retval
 
