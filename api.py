@@ -19,6 +19,7 @@ from django.core.mail import get_connection
 from django.db.utils import DatabaseError
 from django.db import IntegrityError
 from django.http import HttpResponse
+from django.urls import resolve
 from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
@@ -585,9 +586,25 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         try:
             retval = super(DataFileAppResource, self).obj_create(bundle, **kwargs)
         except IntegrityError as err:
-            if "duplicate key" in str(err):
+            if "duplicate key" not in str(err) and \
+                    "UNIQUE constraint failed" not in str(err):
+                raise
+            # Before returning a conflict error (409), let's check whether
+            # the conflicting record is empty, in which case it can be deleted:
+            filename = bundle.data.get("filename", "")
+            directory = bundle.data.get("directory", "")
+            version = bundle.data.get("version", 1)
+            _, _, kwargs = resolve(bundle.data.get("dataset"))
+            dataset_id = kwargs["pk"]
+            duplicate = DataFile.objects.filter(
+                dataset__id=dataset_id, filename=filename, directory=directory,
+                version=version).first()
+            # If the duplicate has zero DataFileObjects, delete it and replace it:
+            if duplicate and DataFileObject.objects.filter(datafile=duplicate).count() == 0:
+                duplicate.delete()
+                retval = super(DataFileAppResource, self).obj_create(bundle, **kwargs)
+            else:
                 raise ImmediateHttpResponse(HttpResponse(status=409))
-            raise
         if 'replicas' not in bundle.data or not bundle.data['replicas']:
             # no replica specified: return upload path and create dfo for
             # new path

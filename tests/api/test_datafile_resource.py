@@ -152,3 +152,56 @@ class DataFileResourceTest(MyTardisResourceTestCase):
         # Ensure that we haven't created a DataFile or a DataFileObject:
         self.assertEqual(datafile_count, DataFile.objects.count())
         self.assertEqual(dfo_count, DataFileObject.objects.count())
+
+    def test_attempt_to_create_df_with_empty_duplicate(self):
+        ds_id = self.testds.id
+        post_data = {
+            "dataset": "/api/v1/dataset/%d/" % ds_id,
+            "filename": "mytestfile.txt",
+            "directory": "",
+            "md5sum": "930e419034038dfad994f0d2e602146c",
+            "size": "8",
+            "mimetype": "text/plain",
+            "parameter_sets": []
+        }
+        df = DataFile.objects.create(
+            dataset=self.testds, filename=post_data["filename"],
+            directory=post_data["directory"],
+            md5sum=post_data["md5sum"], size=post_data["size"])
+
+        self.assertEqual(DataFileObject.objects.filter(datafile=df).count(), 0)
+        response = self.django_client.post(
+            '/api/v1/mydata_dataset_file/',
+            json.dumps(post_data),
+            content_type='application/json')
+        self.assertHttpCreated(response)
+        df.delete()
+
+    def test_attempt_to_create_df_with_nonempty_duplicate(self):
+        ds_id = self.testds.id
+        post_data = {
+            "dataset": "/api/v1/dataset/%d/" % ds_id,
+            "filename": "mytestfile.txt",
+            "directory": "",
+            "md5sum": "930e419034038dfad994f0d2e602146c",
+            "size": "8",
+            "mimetype": "text/plain",
+            "parameter_sets": []
+        }
+        df = DataFile.objects.create(
+            dataset=self.testds, filename=post_data["filename"],
+            directory=post_data["directory"],
+            md5sum=post_data["md5sum"], size=post_data["size"])
+        dfo = DataFileObject(
+            datafile=df,
+            storage_box=df.get_default_storage_box(),
+            uri="test dataset-%d/mytestfile.txt" % ds_id)
+        dfo.save()
+
+        self.assertEqual(DataFileObject.objects.filter(datafile=df).count(), 1)
+        response = self.django_client.post(
+            '/api/v1/mydata_dataset_file/',
+            json.dumps(post_data),
+            content_type='application/json')
+        self.assertHttpConflict(response)
+        df.delete()
