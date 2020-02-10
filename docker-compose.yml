@@ -1,0 +1,9 @@
+version: "2"
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mytardis-app-mydata
+    volumes:
+      - .:/app/tardis/apps/mydata

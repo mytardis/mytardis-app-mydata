@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         urrs = UploaderRegistrationRequest.objects.filter(approved=True)
-        for urr in urrs:
+        for urr in urrs.order_by('id'):
             public_key = urr.requester_public_key.strip()
             public_key = public_key.replace('MyData Key', urr.uploader.name)
             self.stdout.write("%s\n" % public_key)
