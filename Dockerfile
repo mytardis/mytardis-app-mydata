@@ -9,9 +9,9 @@ ENV LANG C.UTF-8
 
 # Create runtime user
 RUN mkdir -p /app && \
-    groupadd -r -g 1001 mytardis && \
-    useradd -r -u 1001 -g 1001 mytardis && \
-    chown mytardis:mytardis -R /app
+    groupadd -r -g 10001 app && \
+    useradd -r -u 10001 -g 10001 -d /app app && \
+    chown app:app -R /app
 
 WORKDIR /app
 
@@ -51,8 +51,8 @@ RUN cat requirements-base.txt \
 COPY test.py /app/
 
 RUN mkdir -p var/store
-RUN chown -R mytardis:mytardis var/store
+RUN chown -R app:app var/store
 
-USER mytardis
+USER app
 
 CMD bash -c 'python3 test.py test tardis/apps/mydata/tests'

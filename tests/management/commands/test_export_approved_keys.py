@@ -1,4 +1,3 @@
-import sys
 import textwrap
 from io import StringIO
 
@@ -39,7 +38,7 @@ class ExportApprovedKeysTestCase(TestCase):
         mock_stdout = StringIO()
         args = []
         opts = dict(stdout=mock_stdout)
-        call_command('export_approved_keys', *args, **opts)    
+        call_command('export_approved_keys', *args, **opts)
         self.assertEqual(mock_stdout.getvalue().strip(), textwrap.dedent("""
             ssh-rsa MOCK_PUBLIC_KEY MOCK_KEY_COMMENT
             ssh-rsa ANOTHER_MOCK_PUBLIC_KEY
