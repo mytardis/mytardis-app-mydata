@@ -5,7 +5,6 @@ Testing the /api/v1/mydata_experiment/ endpoint
 '''
 import json
 
-from tardis.tardis_portal.models.experiment import Experiment
 from tardis.tardis_portal.models.parameters import (
     ParameterName,
     Schema)
@@ -40,8 +39,6 @@ class ExperimentResourceTest(MyTardisResourceTestCase):
                                      authentication=self.get_credentials())
         returned_data = json.loads(output.content.decode())
         self.assertEqual(returned_data["meta"]["total_count"], 0)
-
-        Experiment.objects.create(title="Test Instrument - Test User1")
 
     def test_find_exp_for_uploader_user_folder_username_dataset_structure(self):
         uploader = "TEST_UPLOADER_UUID"
