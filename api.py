@@ -302,6 +302,11 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             else:
                 folder_structure = 'Username / ...'
 
+        class UnknownUser(object):
+            def __init__(self, username='UNKNOWN', email='UNKNOWN'):
+                self.username = username
+                self.email = email
+
         '''
         Responds to title/folder_structure/[user_folder_name|group_folder_name]
         query for MyData.  This can be used by MyData to retrieve an experiment
@@ -318,11 +323,6 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
             need_to_match_user = (folder_structure.startswith('Username /') or
                                   folder_structure.startswith('Email /'))
             need_to_match_group = folder_structure.startswith('User Group /')
-
-            class UnknownUser(object):
-                def __init__(self, username='UNKNOWN', email='UNKNOWN'):
-                    self.username = username
-                    self.email = email
 
             if need_to_match_user:
                 user_folder_name = bundle.request.GET['user_folder_name']
