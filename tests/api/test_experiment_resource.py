@@ -37,15 +37,15 @@ def create_uploader_exp(user, uploader, user_folder_name=None, group_folder_name
         namespace="http://mytardis.org/schemas/mydata/defaultexperiment")
     pset = ExperimentParameterSet.objects.create(experiment=exp, schema=schema)
     pname = ParameterName.objects.get(schema=schema, name="uploader")
-    param = ExperimentParameter.objects.create(
+    ExperimentParameter.objects.create(
         parameterset=pset, name=pname, string_value=uploader)
     if user_folder_name:
         pname = ParameterName.objects.get(schema=schema, name="user_folder_name")
-        param = ExperimentParameter.objects.create(
+        ExperimentParameter.objects.create(
             parameterset=pset, name=pname, string_value=user_folder_name)
     if group_folder_name:
         pname = ParameterName.objects.get(schema=schema, name="group_folder_name")
-        param = ExperimentParameter.objects.create(
+        ExperimentParameter.objects.create(
             parameterset=pset, name=pname, string_value=group_folder_name)
     return exp
 
@@ -69,11 +69,11 @@ def create_title_exp(user, title, user_folder_name=None, group_folder_name=None)
     pset = ExperimentParameterSet.objects.create(experiment=exp, schema=schema)
     if user_folder_name:
         pname = ParameterName.objects.get(schema=schema, name="user_folder_name")
-        param = ExperimentParameter.objects.create(
+        ExperimentParameter.objects.create(
             parameterset=pset, name=pname, string_value=user_folder_name)
     if group_folder_name:
         pname = ParameterName.objects.get(schema=schema, name="group_folder_name")
-        param = ExperimentParameter.objects.create(
+        ExperimentParameter.objects.create(
             parameterset=pset, name=pname, string_value=group_folder_name)
     return exp
 
