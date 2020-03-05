@@ -55,4 +55,4 @@ RUN chown -R app:app var/store
 
 USER app
 
-CMD bash -c 'python3 test.py test tardis/apps/mydata/tests'
+CMD bash -c 'python3 test.py test tardis/apps/mydata/tests && cp .coverage tardis/apps/mydata/'
