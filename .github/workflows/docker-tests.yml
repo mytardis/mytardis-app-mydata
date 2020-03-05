@@ -16,7 +16,9 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: run tests
+    - name: Run tests
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: docker-compose run -e CODECOV_TOKEN test
-    - name: run pylint
+    - name: Run pylint
       run: docker-compose run test pylint tardis/apps/mydata
