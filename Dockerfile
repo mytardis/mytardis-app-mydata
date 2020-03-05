@@ -1,3 +1,4 @@
+# Used for CI testing in .github/workflows/docker-tests.yml
 FROM ubuntu:18.04 AS build
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -56,4 +57,4 @@ RUN chown -R app:app /app
 
 USER app
 
-CMD bash -c 'python3 test.py test tardis/apps/mydata/tests && ([[ -v CODECOV_TOKEN ]] && codecov -X gcov || true)'
+CMD bash -c "python3 test.py test tardis/apps/mydata/tests && ([[ -v CODECOV_TOKEN ]] && codecov -X gcov --root tardis/apps/mydata -b master -c $GITHUB_SHA || true)"
