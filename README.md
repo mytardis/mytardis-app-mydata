@@ -1,4 +1,7 @@
 # mytardis-app-mydata
+
+[![Build](https://github.com/mytardis/mytardis-app-mydata/workflows/Test%20MyTardis%20MyData%20App/badge.svg)](https://github.com/mytardis/mytardis-app-mydata/actions?query=workflow%3A%22Test+MyTardis+MyData+App%22) [![codecov](https://codecov.io/gh/mytardis/mytardis-app-mydata/branch/master/graph/badge.svg)](https://codecov.io/gh/mytardis/mytardis-app-mydata)
+
 Server-side functionality and data models for MyData
 
 
