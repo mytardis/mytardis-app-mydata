@@ -31,6 +31,8 @@ RUN apt-get -yqq update && \
         libxi6 && \
     pip3 install --no-cache-dir --upgrade pip
 
+USER app
+
 # Clone MyTardis and MyData repos
 RUN git clone --depth 1 --branch develop \
     https://github.com/mytardis/mytardis.git ./ && \
@@ -51,8 +53,5 @@ RUN cat requirements-base.txt \
 COPY test.py /app/
 
 RUN mkdir -p var/store
-RUN chown -R app:app var/store
-
-USER app
 
 CMD bash -c 'python3 test.py test tardis/apps/mydata/tests && cp .coverage tardis/apps/mydata/'
