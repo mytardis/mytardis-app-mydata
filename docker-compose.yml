@@ -7,3 +7,5 @@ services:
     image: mytardis-app-mydata
     volumes:
       - .:/app/tardis/apps/mydata
+    environment:
+      - CODECOV_TOKEN
