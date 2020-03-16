@@ -587,7 +587,8 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             retval = super(DataFileAppResource, self).obj_create(bundle, **kwargs)
         except IntegrityError as err:
             if "duplicate key" not in str(err) and \
-                    "UNIQUE constraint failed" not in str(err):
+                    "UNIQUE constraint failed" not in str(err) and \
+                        "Duplicate entry" not in str(err):
                 raise
             # Before returning a conflict error (409), let's check whether
             # the conflicting record is empty, in which case it can be deleted:
