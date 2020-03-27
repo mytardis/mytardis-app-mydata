@@ -7,7 +7,7 @@ Testing the DataFile resource in MyTardis's Tastypie-based REST API
 import json
 import tempfile
 
-import mock
+from unittest.mock import patch
 
 from django.db.utils import DatabaseError
 from django.test.client import Client
