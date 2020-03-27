@@ -7,7 +7,7 @@ Testing the DataFile resource in MyTardis's Tastypie-based REST API
 import json
 import tempfile
 
-import mock
+from unittest.mock import patch
 
 from django.db.utils import DatabaseError
 from django.test.client import Client
@@ -133,7 +133,7 @@ class DataFileResourceTest(MyTardisResourceTestCase):
         datafile_count = DataFile.objects.count()
         dfo_count = DataFileObject.objects.count()
 
-        with mock.patch('tardis.tardis_portal.models.datafile.DataFileObject.save') as dfo_save_mock:
+        with patch('tardis.tardis_portal.models.datafile.DataFileObject.save') as dfo_save_mock:
             dfo_save_mock.side_effect = DatabaseError('database connection error')
             # If we used the default SERVER_NAME of "testserver" below,
             # Tastypie would re-raise the exception, rather than returning
