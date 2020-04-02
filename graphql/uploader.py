@@ -49,4 +49,3 @@ class UpdateUploader(ModelUpdateMutation):
     class Meta:
         model = UploaderModel
         permissions = ['mydata.change_uploader']
-

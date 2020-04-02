@@ -1,11 +1,7 @@
 import graphene
 from graphene_django.filter import DjangoFilterConnectionField
 
-from ..models.uploader import (
-    Uploader as UploaderModel,
-    UploaderRegistrationRequest as UploaderRegistrationRequestModel,
-    UploaderSetting as UploaderSettingModel
-)
+from ..models.uploader import Uploader as UploaderModel
 
 from .uploader import (
     UploaderType, UploaderTypeFilter,
