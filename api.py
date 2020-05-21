@@ -231,9 +231,9 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
                 "Thanks,\n" \
                 "MyTardis\n" \
                 % (site, bundle.obj.id)
-            logger.info('Informing admins of a new '
+            logger.info('Informing managers of a new '
                         'uploader registraion request.')
-            mail.mail_admins(subject, message,
+            mail.mail_managers(subject, message,
                              connection=get_connection(fail_silently=True))
         except:
             logger.error(traceback.format_exc())
