@@ -66,7 +66,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             if is_facility_manager:
                 return object_list
             return []
-        return super(ACLAuthorization, self).read_list(object_list, bundle)
+        return super().read_list(object_list, bundle)
 
     def read_detail(self, object_list, bundle):  # noqa # too complex
         if bundle.request.user.is_authenticated and \
@@ -82,7 +82,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             return is_facility_manager
         if isinstance(bundle.obj, DataFileObject):
             return has_datafile_access(bundle.request, bundle.obj.datafile.id)
-        return super(ACLAuthorization, self).read_detail(object_list, bundle)
+        return super().read_detail(object_list, bundle)
 
     def create_detail(self, object_list, bundle):
         authuser = bundle.request.user
@@ -95,7 +95,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
             return is_facility_manager
         if isinstance(bundle.obj, UploaderSetting):
             return is_facility_manager
-        return super(ACLAuthorization, self).create_detail(object_list, bundle)
+        return super().create_detail(object_list, bundle)
 
     def update_detail(self, object_list, bundle):
         '''
@@ -111,7 +111,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
                 bundle.data['uuid'] == bundle.obj.uuid
         if isinstance(bundle.obj, UploaderSetting):
             return is_facility_manager
-        return super(ACLAuthorization, self).update_detail(object_list, bundle)
+        return super().update_detail(object_list, bundle)
 
 
 class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
@@ -171,7 +171,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             bundle.obj.settings_updated = datetime.now()
             bundle.obj.save()
 
-        return super(UploaderAppResource, self).hydrate_m2m(bundle)
+        return super().hydrate_m2m(bundle)
 
     def obj_create(self, bundle, **kwargs):
         bundle.data['created_time'] = datetime.now()
@@ -179,7 +179,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         ip = get_ip(bundle.request)
         if ip is not None:
             bundle.data['wan_ip_address'] = ip
-        bundle = super(UploaderAppResource, self).obj_create(bundle, **kwargs)
+        bundle = super().obj_create(bundle, **kwargs)
         return bundle
 
     def obj_update(self, bundle, **kwargs):
@@ -191,7 +191,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         ip = get_ip(bundle.request)
         if ip is not None:
             bundle.data['wan_ip_address'] = ip
-        bundle = super(UploaderAppResource, self).obj_update(bundle, **kwargs)
+        bundle = super().obj_update(bundle, **kwargs)
         bundle.obj_update_done = True
         return bundle
 
@@ -219,8 +219,7 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
         always_return_data = True
 
     def obj_create(self, bundle, **kwargs):
-        bundle = super(UploaderRegistrationRequestAppResource, self)\
-            .obj_create(bundle, **kwargs)
+        bundle = super().obj_create(bundle, **kwargs)
         try:
             site = Site.objects.get_current().domain
             subject = '[MyTardis] Uploader Registration Request Created'
@@ -241,16 +240,14 @@ class UploaderRegistrationRequestAppResource(tardis.tardis_portal.api
         return bundle
 
     def hydrate(self, bundle):
-        bundle = super(UploaderRegistrationRequestAppResource, self)\
-            .hydrate(bundle)
+        bundle = super().hydrate(bundle)
         bundle.data['request_time'] = datetime.now()
         return bundle
 
     def save_related(self, bundle):
         if not hasattr(bundle.obj, 'approved_storage_box'):
             bundle.obj.approved_storage_box = None
-        super(UploaderRegistrationRequestAppResource,
-              self).save_related(bundle)
+        super().save_related(bundle)
 
 
 class UploaderSettingAppResource(tardis.tardis_portal.api.MyTardisModelResource):
@@ -452,8 +449,7 @@ class ExperimentAppResource(tardis.tardis_portal.api.ExperimentResource):
 
             return []
 
-        return super(ExperimentAppResource, self).obj_get_list(bundle,
-                                                               **kwargs)
+        return super().obj_get_list(bundle, **kwargs)
 
 
 class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
@@ -584,7 +580,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 if not is_aware(v):
                     bundle.data[k] = make_aware(v, tz, dst).isoformat()
         try:
-            retval = super(DataFileAppResource, self).obj_create(bundle, **kwargs)
+            retval = super().obj_create(bundle, **kwargs)
         except IntegrityError as err:
             if "duplicate key" not in str(err) and \
                     "UNIQUE constraint failed" not in str(err) and \
@@ -603,7 +599,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             # If the duplicate has zero DataFileObjects, delete it and replace it:
             if duplicate and DataFileObject.objects.filter(datafile=duplicate).count() == 0:
                 duplicate.delete()
-                retval = super(DataFileAppResource, self).obj_create(bundle, **kwargs)
+                retval = super().obj_create(bundle, **kwargs)
             else:
                 raise ImmediateHttpResponse(HttpResponse(status=409))
         if 'replicas' not in bundle.data or not bundle.data['replicas']:
@@ -630,7 +626,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         return retval
 
     def post_list(self, request, **kwargs):
-        response = super(DataFileAppResource, self).post_list(request, **kwargs)
+        response = super().post_list(request, **kwargs)
         if self.temp_url is not None:
             response.content = self.temp_url
             self.temp_url = None
@@ -662,7 +658,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             data = json.loads(jsondata)
             data.update(request.FILES)
             return data
-        return super(DataFileAppResource, self).deserialize(request, data, format)
+        return super().deserialize(request, data, format)
 
     def put_detail(self, request, **kwargs):
         '''
@@ -672,7 +668,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 not hasattr(request, '_body'):
             request._body = ''
 
-        return super(DataFileAppResource, self).put_detail(request, **kwargs)
+        return super().put_detail(request, **kwargs)
 
     def obj_get_list(self, bundle, **kwargs):
         '''
@@ -680,8 +676,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         directory and dataset ID) don't return duplicate results,
         even if the dataset belongs to multiple experiments.
         '''
-        obj_list = super(DataFileAppResource, self).obj_get_list(
-            bundle, **kwargs)
+        obj_list = super().obj_get_list(bundle, **kwargs)
         return obj_list.order_by('id').distinct()
 
 

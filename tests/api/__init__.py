@@ -30,7 +30,7 @@ class MyTardisResourceTestCase(ResourceTestCaseMixin, TransactionTestCase):
     abstract class without tests to combine common settings in one place
     '''
     def setUp(self):
-        super(MyTardisResourceTestCase, self).setUp()
+        super().setUp()
 
         self.username = 'mytardis'
         self.password = 'mytardis'
