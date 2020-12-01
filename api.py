@@ -7,8 +7,8 @@ import logging
 import os
 import traceback
 from datetime import datetime
-import pytz
 import re
+import pytz
 
 from django.conf import settings
 from django.conf.urls import url
@@ -19,7 +19,7 @@ from django.core.files.storage import FileSystemStorage, get_storage_class
 from django.core.mail import get_connection
 from django.db.utils import DatabaseError
 from django.db import IntegrityError
-from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import resolve
 from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
@@ -750,7 +750,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     def check_dfo(self, request, dfo_id):
         try:
             dfo = DataFileObject.objects.get(id=dfo_id)
-        except Exception as e:
+        except:
             dfo = None
 
         return dfo is not None and \
@@ -882,6 +882,21 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         return JsonResponse(data, status=200)
 
+    def make_file(self, dfo, chunks, data_path):
+        """
+        Reassembly file from chunks
+        """
+        dst = open(dfo.get_full_path(), "wb")
+        for chunk in chunks:
+            file_path = os.path.join(data_path, chunk.chunk_id)
+            src = open(file_path, "rb")
+            while True:
+                data = src.read(settings.CHUNK_COPY_SIZE)
+                if not data:
+                    break
+                dst.write(data)
+        dst.close()
+
     def complete_upload(self, request, **kwargs):
         """
         Complete upload and create full file
@@ -901,15 +916,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 data_path = os.path.join(settings.CHUNK_STORAGE, kwargs["dfo_id"])
                 # Copy chunks to a final destination
                 try:
-                    dst = open(dfo.get_full_path(), "wb")
-                    for chunk in chunks:
-                        file_path = os.path.join(data_path, chunk.chunk_id)
-                        src = open(file_path, "rb")
-                        while True:
-                            data = src.read(settings.CHUNK_COPY_SIZE)
-                            if not data: break
-                            dst.write(data)
-                    dst.close()
+                    self.make_file(dfo, chunks, data_path)
                 except Exception as e:
                     return self.handle_error(str(e))
                 # Cleanup
@@ -918,11 +925,12 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                     chunk.delete()
                     try:
                         os.remove(file_path)
-                    except Exception as e:
+                    except:
                         pass
+                # Folder must be empty
                 try:
                     os.rmdir(data_path)
-                except Exception as e:
+                except:
                     pass
 
             # Verify file
@@ -942,11 +950,12 @@ def calc_checksum(algorithm, data):
     """
     Calculate checksum for a binary data
     """
+    import hashlib
+    import xxhash
+
     if algorithm == "xxh3_64":
-        import xxhash
         return xxhash.xxh3_64(data).hexdigest()
     elif algorithm == "md5":
-        import hashlib
         return hashlib.md5(data).hexdigest()
-    return None
 
+    return None
