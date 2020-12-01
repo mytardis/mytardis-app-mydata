@@ -954,8 +954,10 @@ def calc_checksum(algorithm, data):
     import xxhash
 
     if algorithm == "xxh3_64":
-        return xxhash.xxh3_64(data).hexdigest()
+        checksum = xxhash.xxh3_64(data).hexdigest()
     elif algorithm == "md5":
-        return hashlib.md5(data).hexdigest()
+        checksum = hashlib.md5(data).hexdigest()
+    else:
+        checksum = None
 
-    return None
+    return checksum
