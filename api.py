@@ -8,6 +8,7 @@ import os
 import traceback
 from datetime import datetime
 import pytz
+import re
 
 from django.conf import settings
 from django.conf.urls import url
@@ -18,7 +19,7 @@ from django.core.files.storage import FileSystemStorage, get_storage_class
 from django.core.mail import get_connection
 from django.db.utils import DatabaseError
 from django.db import IntegrityError
-from django.http import HttpResponse
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.urls import resolve
 from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
@@ -38,10 +39,13 @@ from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
 from tardis.tardis_portal.models.datafile import compute_checksums
+from tardis.tardis_portal import tasks
 
 from .models.uploader import Uploader
 from .models.uploader import UploaderRegistrationRequest
 from .models.uploader import UploaderSetting
+from .models.chunk import Chunk
+
 
 logger = logging.getLogger(__name__)
 
@@ -706,3 +710,243 @@ class ReplicaAppResource(tardis.tardis_portal.api.ReplicaResource):
             file_object_size = None
         bundle.data['size'] = file_object_size
         return bundle
+
+
+class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
+    """
+    Provide chunked upload for data file
+    https://docs.google.com/document/d/1wZDwReW8LyplHJiUuH3QTzNguODX6mU2-8J6XN7PzZk/edit
+    """
+
+    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        resource_name = "upload"
+        allowed_methods = ["get", "put", "post"]
+        authorization = ACLAuthorization()
+        queryset = Chunk.objects.all()
+        filtering = {
+            "dfo_id": ["exact"]
+        }
+        always_return_data = True
+
+    def prepend_urls(self):
+        return [
+            url(
+                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/$" % self._meta.resource_name,
+                self.wrap_view("get_chunks"),
+                name="api_mydata_get_chunks"
+            ),
+            url(
+                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/upload/$" % self._meta.resource_name,
+                self.wrap_view("upload_chunk"),
+                name="api_mydata_upload_chunk"
+            ),
+            url(
+                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/complete/$" % self._meta.resource_name,
+                self.wrap_view("complete_upload"),
+                name="api_mydata_complete_upload"
+            ),
+        ]
+
+    def check_dfo(self, request, dfo_id):
+        try:
+            dfo = DataFileObject.objects.get(id=dfo_id)
+        except Exception as e:
+            dfo = None
+
+        return dfo is not None and \
+               has_datafile_access(request=request, datafile_id=dfo.datafile.id)
+
+    def handle_error(self, message, code=503):
+        """
+        Return error message in JSON format
+        """
+        data = {
+            "success": False,
+            "error": message
+        }
+
+        return JsonResponse(data, status=code)
+
+    def get_chunks(self, request, **kwargs):
+        """
+        Get status of data file upload
+        """
+        self.method_check(request, allowed=["get"])
+        self.is_authenticated(request)
+
+        if not self.check_dfo(request, kwargs["dfo_id"]):
+            return self.handle_error("Invalid object or access denied.")
+
+        data = {
+            "size": settings.CHUNK_SIZE,
+            "checksum": settings.CHUNK_CHECKSUM,
+            "completed": []
+        }
+
+        for chunk in Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("offset"):
+            data["completed"].append({
+                "id": chunk.id,
+                "offset": chunk.offset
+            })
+
+        return JsonResponse(data, status=200)
+
+    def upload_chunk(self, request, **kwargs):
+        """
+        Upload chunk of data file
+        """
+        import uuid
+
+        self.method_check(request, allowed=["post"])
+        self.is_authenticated(request)
+
+        if not self.check_dfo(request, kwargs["dfo_id"]):
+            return self.handle_error("Invalid object or access denied.")
+
+        if not "Checksum" in request.headers:
+            return self.handle_error("Missing 'Checksum' in header.")
+        checksum = request.headers["Checksum"]
+
+        if not "Content-Range" in request.headers:
+            return self.handle_error("Missing 'Content-Range' in header.")
+        content_range = request.headers["Content-Range"]
+
+        m = re.search(r"^(\d+)\-(\d+)\/(\d+)$", content_range).groups()
+        content_start = int(m[0])
+        content_end = int(m[1])
+        if (content_end - content_start) > settings.CHUNK_SIZE:
+            return self.handle_error("Chunk size is larger than max allowed.")
+
+        check = Chunk.objects.filter(
+            dfo_id=kwargs["dfo_id"],
+            offset=content_start
+        )
+        if len(check) != 0:
+            return self.handle_error("Chunk already uploaded.")
+
+        content_checksum = calc_checksum(settings.CHUNK_CHECKSUM, request.body)
+        if content_checksum is None or content_checksum != checksum:
+            return self.handle_error(
+                "Checksum does not match. {}:{}".format(settings.CHUNK_CHECKSUM, content_checksum))
+
+        if not os.path.exists(settings.CHUNK_STORAGE):
+            try:
+                os.mkdir(settings.CHUNK_STORAGE)
+            except Exception as e:
+                return self.handle_error(str(e))
+
+        data_path = os.path.join(settings.CHUNK_STORAGE, kwargs["dfo_id"])
+        if not os.path.exists(data_path):
+            try:
+                os.mkdir(data_path)
+            except Exception as e:
+                return self.handle_error(str(e))
+
+        chunk_id = str(uuid.uuid4())
+        file_path = os.path.join(data_path, chunk_id)
+
+        try:
+            file = open(file_path, "wb")
+            file.write(request.body)
+            file.close()
+        except Exception as e:
+            return self.handle_error(str(e))
+
+        dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
+        instrument = dfo.datafile.dataset.instrument
+        if instrument is not None:
+            instrument_id = instrument.id
+        else:
+            instrument_id = None
+
+        try:
+            chunk = Chunk.objects.create(
+                chunk_id=chunk_id,
+                dfo_id=kwargs["dfo_id"],
+                offset=content_start,
+                created=datetime.now(),
+                instrument_id=instrument_id,
+                user_id=request.user.id
+            )
+        except Exception as e:
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                pass
+            return self.handle_error(str(e))
+
+        data = {
+            "success": True,
+            "id": chunk.id
+        }
+
+        return JsonResponse(data, status=200)
+
+    def complete_upload(self, request, **kwargs):
+        """
+        Complete upload and create full file
+        """
+
+        self.method_check(request, allowed=["get"])
+        self.is_authenticated(request)
+
+        if not self.check_dfo(request, kwargs["dfo_id"]):
+            return self.handle_error("Invalid object or access denied.")
+
+        dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
+
+        if not dfo.verified:
+            chunks = Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("offset")
+            if len(chunks) != 0:
+                data_path = os.path.join(settings.CHUNK_STORAGE, kwargs["dfo_id"])
+                # Copy chunks to a final destination
+                try:
+                    dst = open(dfo.get_full_path(), "wb")
+                    for chunk in chunks:
+                        file_path = os.path.join(data_path, chunk.chunk_id)
+                        src = open(file_path, "rb")
+                        while True:
+                            data = src.read(settings.CHUNK_COPY_SIZE)
+                            if not data: break
+                            dst.write(data)
+                    dst.close()
+                except Exception as e:
+                    return self.handle_error(str(e))
+                # Cleanup
+                for chunk in chunks:
+                    file_path = os.path.join(data_path, chunk.chunk_id)
+                    chunk.delete()
+                    try:
+                        os.remove(file_path)
+                    except Exception as e:
+                        pass
+                try:
+                    os.rmdir(data_path)
+                except Exception as e:
+                    pass
+
+            # Verify file
+            tasks.dfo_verify.apply_async(
+                args=[dfo.id],
+                priority=dfo.priority)
+
+        data = {
+            "success": True,
+            "verified": dfo.verified
+        }
+
+        return JsonResponse(data, status=200)
+
+
+def calc_checksum(algorithm, data):
+    """
+    Calculate checksum for a binary data
+    """
+    if algorithm == "xxh3_64":
+        import xxhash
+        return xxhash.xxh3_64(data).hexdigest()
+    elif algorithm == "md5":
+        import hashlib
+        return hashlib.md5(data).hexdigest()
+    return None
+
