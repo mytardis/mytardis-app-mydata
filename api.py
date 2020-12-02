@@ -731,17 +731,20 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     def prepend_urls(self):
         return [
             url(
-                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/$" % self._meta.resource_name,
+                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)%s$" % (
+                self._meta.resource_name, trailing_slash()),
                 self.wrap_view("get_chunks"),
                 name="api_mydata_get_chunks"
             ),
             url(
-                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/upload/$" % self._meta.resource_name,
+                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/upload%s$" % (
+                self._meta.resource_name, trailing_slash()),
                 self.wrap_view("upload_chunk"),
                 name="api_mydata_upload_chunk"
             ),
             url(
-                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/complete/$" % self._meta.resource_name,
+                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/complete%s$" % (
+                self._meta.resource_name, trailing_slash()),
                 self.wrap_view("complete_upload"),
                 name="api_mydata_complete_upload"
             ),
