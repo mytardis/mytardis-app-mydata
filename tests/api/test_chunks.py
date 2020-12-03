@@ -16,11 +16,11 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         super().setUp()
         self.fixtures_path = "tardis/apps/mydata/fixtures"
         self.chunks = [{
-            "name": "xaa",
+            "name": "xaa.bin",
             "range": "0-1000/1553",
             "md5sum": "1302ac5df76a7c3fb420cdf7f660049a"
         }, {
-            "name": "xab",
+            "name": "xab.bin",
             "range": "1000-1553/1553",
             "md5sum": "6778a50e7d952264d0cadf8500e53559"
         }]
@@ -68,8 +68,9 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
             authentication=self.get_credentials())
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        for k in ["size", "checksum", "completed"]:
+        for k in ["success", "size", "checksum", "completed"]:
             self.assertIn(k, data)
+        self.assertTrue(data["success"])
         self.assertEqual(data["size"], 1000)
         self.assertEqual(data["checksum"], "md5")
         self.assertEqual(data["completed"], [])
@@ -78,7 +79,7 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
     def test_upload_chunk(self):
-        response = self.upload_chunk(1)
+        response = self.upload_chunk(0)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         for k in ["success", "id"]:

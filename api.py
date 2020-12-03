@@ -761,7 +761,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         return None
 
-    def handle_error(self, message, code=503):
+    def handle_error(self, message):
         """
         Return error message in JSON format
         """
@@ -770,7 +770,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             "error": message
         }
 
-        return JsonResponse(data, status=code)
+        return JsonResponse(data, status=200)
 
     def get_chunks(self, request, **kwargs):
         """
@@ -783,6 +783,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             return self.handle_error("Invalid object or access denied.")
 
         data = {
+            "success": True,
             "size": settings.CHUNK_SIZE,
             "checksum": settings.CHUNK_CHECKSUM,
             "completed": []
