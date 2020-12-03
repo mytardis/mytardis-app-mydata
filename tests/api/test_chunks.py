@@ -88,12 +88,9 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
     @override_settings(CHUNK_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
-    @override_settings(CELERY_ALWAYS_EAGER=True)
     def test_complete_upload(self):
         self.upload_chunk(0)
         self.upload_chunk(1)
-        dfo = DataFileObject.objects.get(id=self.dfo.id)
-        self.assertFalse(dfo.verified)
         response = self.api_client.get(
             "/api/v1/mydata_upload/%s/complete/" % self.dfo.id,
             authentication=self.get_credentials())
@@ -102,4 +99,4 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         self.assertIn("success", data)
         self.assertTrue(data["success"])
         dfo = DataFileObject.objects.get(id=self.dfo.id)
-        self.assertTrue(dfo.verified)
+        self.assertTrue(dfo.verify())
