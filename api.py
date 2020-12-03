@@ -753,11 +753,13 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     def check_dfo(self, request, dfo_id):
         try:
             dfo = DataFileObject.objects.get(id=dfo_id)
+            return any(
+                request.user.has_perm("tardis_acls.change_experiment", experiment)
+                for experiment in dfo.datafile.dataset.experiments.all())
         except:
-            dfo = None
+            pass
 
-        return dfo is not None and \
-               has_datafile_access(request=request, datafile_id=dfo.datafile.id)
+        return None
 
     def handle_error(self, message, code=503):
         """
@@ -806,13 +808,17 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         if not self.check_dfo(request, kwargs["dfo_id"]):
             return self.handle_error("Invalid object or access denied.")
 
-        if not "Checksum" in request.headers:
-            return self.handle_error("Missing 'Checksum' in header.")
-        checksum = request.headers["Checksum"]
+        checksum = request.headers.get("Checksum", None)
+        if checksum is None:
+            checksum = request.META.get("Checksum", None)
+            if checksum is None:
+                return self.handle_error("Missing 'Checksum' in header.")
 
-        if not "Content-Range" in request.headers:
-            return self.handle_error("Missing 'Content-Range' in header.")
-        content_range = request.headers["Content-Range"]
+        content_range = request.headers.get("Content-Range", None)
+        if content_range is None:
+            content_range = request.META.get("Content-Range", None)
+            if content_range is None:
+                return self.handle_error("Missing 'Content-Range' in header.")
 
         m = re.search(r"^(\d+)\-(\d+)\/(\d+)$", content_range).groups()
         content_start = int(m[0])
@@ -889,7 +895,11 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         """
         Reassembly file from chunks
         """
-        dst = open(dfo.get_full_path(), "wb")
+        dst_path = dfo.get_full_path()
+        dst_dir = os.path.dirname(dst_path)
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+        dst = open(dst_path, "wb")
         for chunk in chunks:
             file_path = os.path.join(data_path, chunk.chunk_id)
             src = open(file_path, "rb")
