@@ -17,6 +17,7 @@ class Migration(migrations.Migration):
                 ('chunk_id', models.CharField(max_length=36, unique=True)),
                 ('dfo_id', models.IntegerField()),
                 ('offset', models.BigIntegerField()),
+                ('size', models.BigIntegerField()),
                 ('created', models.DateTimeField()),
                 ('user_id', models.IntegerField()),
                 ('instrument_id', models.IntegerField(null=True))

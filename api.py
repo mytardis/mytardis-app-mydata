@@ -5,6 +5,7 @@ Additions to MyTardis's REST API
 import json
 import logging
 import os
+import math
 import traceback
 from datetime import datetime
 import re
@@ -39,12 +40,13 @@ from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
 from tardis.tardis_portal.models.datafile import compute_checksums
-from tardis.tardis_portal import tasks
 
 from .models.uploader import Uploader
 from .models.uploader import UploaderRegistrationRequest
 from .models.uploader import UploaderSetting
 from .models.chunk import Chunk
+
+from . import tasks
 
 
 logger = logging.getLogger(__name__)
@@ -772,6 +774,19 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         return JsonResponse(data, status=200)
 
+    def get_chunk_size(self, file_size):
+        """
+        Calculate chunk size based on data file size
+        """
+        chunk_size = settings.CHUNK_MIN_SIZE
+        while True:
+            count_chunks = math.ceil(file_size/chunk_size)
+            if count_chunks < 100:
+                return chunk_size
+            chunk_size += settings.CHUNK_MIN_SIZE
+            if chunk_size > settings.CHUNK_MAX_SIZE:
+                return settings.CHUNK_MAX_SIZE
+
     def get_chunks(self, request, **kwargs):
         """
         Get status of data file upload
@@ -782,18 +797,29 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         if not self.check_dfo(request, kwargs["dfo_id"]):
             return self.handle_error("Invalid object or access denied.")
 
+        dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
+        file_size = dfo.datafile.size
+
         data = {
             "success": True,
-            "size": settings.CHUNK_SIZE,
-            "checksum": settings.CHUNK_CHECKSUM,
-            "completed": []
+            "completed": True
         }
 
-        for chunk in Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("offset"):
-            data["completed"].append({
-                "id": chunk.id,
-                "offset": chunk.offset
-            })
+        if not dfo.verified:
+
+            try:
+                # Check for uploaded chunks
+                last_chunk = Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("-offset")[0]
+                offset = min(last_chunk.offset + last_chunk.size, file_size)
+            except Exception as e:
+                offset = 0
+                pass
+
+            if offset != file_size:
+                data["completed"] = False
+                data["offset"] = offset
+                data["size"] = self.get_chunk_size(file_size)
+                data["checksum"] = settings.CHUNK_CHECKSUM
 
         return JsonResponse(data, status=200)
 
@@ -824,7 +850,8 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         m = re.search(r"^(\d+)\-(\d+)\/(\d+)$", content_range).groups()
         content_start = int(m[0])
         content_end = int(m[1])
-        if (content_end - content_start) > settings.CHUNK_SIZE:
+        content_length = content_end-content_start
+        if content_length > settings.CHUNK_MAX_SIZE:
             return self.handle_error("Chunk size is larger than max allowed.")
 
         check = Chunk.objects.filter(
@@ -863,6 +890,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
             return self.handle_error(str(e))
 
         dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
+
         instrument = dfo.datafile.dataset.instrument
         if instrument is not None:
             instrument_id = instrument.id
@@ -874,6 +902,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 chunk_id=chunk_id,
                 dfo_id=kwargs["dfo_id"],
                 offset=content_start,
+                size=content_length,
                 created=datetime.now(),
                 instrument_id=instrument_id,
                 user_id=request.user.id
@@ -892,25 +921,6 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         return JsonResponse(data, status=200)
 
-    def make_file(self, dfo, chunks, data_path):
-        """
-        Reassembly file from chunks
-        """
-        dst_path = dfo.get_full_path()
-        dst_dir = os.path.dirname(dst_path)
-        if not os.path.exists(dst_dir):
-            os.makedirs(dst_dir)
-        dst = open(dst_path, "wb")
-        for chunk in chunks:
-            file_path = os.path.join(data_path, chunk.chunk_id)
-            src = open(file_path, "rb")
-            while True:
-                data = src.read(settings.CHUNK_COPY_SIZE)
-                if not data:
-                    break
-                dst.write(data)
-        dst.close()
-
     def complete_upload(self, request, **kwargs):
         """
         Complete upload and create full file
@@ -925,32 +935,8 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
 
         if not dfo.verified:
-            chunks = Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("offset")
-            if len(chunks) != 0:
-                data_path = os.path.join(settings.CHUNK_STORAGE, kwargs["dfo_id"])
-                # Copy chunks to a final destination
-                try:
-                    self.make_file(dfo, chunks, data_path)
-                except Exception as e:
-                    return self.handle_error(str(e))
-                # Cleanup
-                for chunk in chunks:
-                    file_path = os.path.join(data_path, chunk.chunk_id)
-                    chunk.delete()
-                    try:
-                        os.remove(file_path)
-                    except:
-                        pass
-                # Folder must be empty
-                try:
-                    os.rmdir(data_path)
-                except:
-                    pass
-
-            # Verify file
-            tasks.dfo_verify.apply_async(
-                args=[dfo.id],
-                priority=dfo.priority)
+            # Async task as we can't wait until file is ready
+            tasks.complete_chunked_upload.apply_async(args=[dfo.id])
 
         data = {
             "success": True,
