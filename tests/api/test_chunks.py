@@ -60,7 +60,8 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
             data=data,
             **headers)
 
-    @override_settings(CHUNK_SIZE=1000)
+    @override_settings(CHUNK_MIN_SIZE=1000)
+    @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
     def test_get_chunks(self):
         response = self.api_client.get(
@@ -75,7 +76,8 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         self.assertEqual(data["checksum"], "md5")
         self.assertEqual(data["completed"], [])
 
-    @override_settings(CHUNK_SIZE=1000)
+    @override_settings(CHUNK_MIN_SIZE=1000)
+    @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
     def test_upload_chunk(self):
@@ -86,7 +88,8 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
             self.assertIn(k, data)
         self.assertTrue(data["success"])
 
-    @override_settings(CHUNK_SIZE=1000)
+    @override_settings(CHUNK_MIN_SIZE=1000)
+    @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
     def test_complete_upload(self):
