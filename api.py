@@ -903,7 +903,6 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 dfo_id=kwargs["dfo_id"],
                 offset=content_start,
                 size=content_length,
-                created=datetime.now(),
                 instrument_id=instrument_id,
                 user_id=request.user.id
             )

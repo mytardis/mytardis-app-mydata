@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('dfo_id', models.IntegerField()),
                 ('offset', models.BigIntegerField()),
                 ('size', models.BigIntegerField()),
-                ('created', models.DateTimeField()),
+                ('created', models.DateTimeField(auto_now_add=True)),
                 ('user_id', models.IntegerField()),
                 ('instrument_id', models.IntegerField(null=True))
             ],

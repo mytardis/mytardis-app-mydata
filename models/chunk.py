@@ -10,7 +10,7 @@ class Chunk(models.Model):
     dfo_id = models.IntegerField(null=False)
     offset = models.BigIntegerField(null=False)
     size = models.BigIntegerField(null=False)
-    created = models.DateTimeField(null=False)
+    created = models.DateTimeField(auto_now_add=True)
     instrument_id = models.IntegerField(null=True)  # Might be uploaded manually
     user_id = models.IntegerField(null=False)
 
