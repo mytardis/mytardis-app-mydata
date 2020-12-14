@@ -60,6 +60,17 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
             data=data,
             **headers)
 
+    def test_get_chunks_error(self):
+        response = self.api_client.get(
+            "/api/v1/mydata_upload/%s/" % str(self.dfo.id+1),
+            authentication=self.get_credentials())
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        for k in ["success", "error"]:
+            self.assertIn(k, data)
+        self.assertFalse(data["success"])
+        self.assertEqual(data["error"], "Invalid object or access denied.")
+
     @override_settings(CHUNK_MIN_SIZE=1000)
     @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
