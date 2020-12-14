@@ -811,9 +811,8 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                 # Check for uploaded chunks
                 last_chunk = Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("-offset")[0]
                 offset = min(last_chunk.offset + last_chunk.size, file_size)
-            except Exception as e:
+            except:
                 offset = 0
-                pass
 
             if offset != file_size:
                 data["completed"] = False
