@@ -69,12 +69,12 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
             authentication=self.get_credentials())
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        for k in ["success", "size", "checksum", "completed"]:
+        for k in ["success", "offset", "size", "checksum"]:
             self.assertIn(k, data)
         self.assertTrue(data["success"])
+        self.assertEqual(data["offset"], 0)
         self.assertEqual(data["size"], 1000)
         self.assertEqual(data["checksum"], "md5")
-        self.assertEqual(data["completed"], [])
 
     @override_settings(CHUNK_MIN_SIZE=1000)
     @override_settings(CHUNK_MAX_SIZE=1000)
