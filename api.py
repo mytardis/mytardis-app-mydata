@@ -874,7 +874,8 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         data_path = os.path.join(settings.CHUNK_STORAGE, kwargs["dfo_id"])
         if not os.path.exists(data_path):
             try:
-                os.mkdir(data_path)
+                os.makedirs(data_path, mode=0o770, exist_ok=True)
+                os.chmod(data_path, 0o770)
             except Exception as e:
                 return self.handle_error(str(e))
 
