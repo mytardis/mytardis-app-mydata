@@ -935,8 +935,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
         if not dfo.verified:
             # Async task as we can't wait until file is ready
-            # tasks.complete_chunked_upload.apply_async(args=[dfo.id])
-            tasks.complete_chunked_upload(dfo.id)
+            tasks.complete_chunked_upload.apply_async(args=[dfo.id])
 
         data = {
             "success": True,

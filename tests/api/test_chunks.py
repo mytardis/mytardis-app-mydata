@@ -103,7 +103,7 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
     @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
-    @override_settings(CELERY_ALWAYS_EAGER=True)
+    @override_settings(CHUNK_COPY_SIZE=250)
     def test_complete_upload(self):
         self.upload_chunk(0)
         self.upload_chunk(1)
