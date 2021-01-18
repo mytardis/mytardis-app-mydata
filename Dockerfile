@@ -33,10 +33,12 @@ RUN apt-get -yqq update && \
     pip3 install --no-cache-dir --upgrade pip
 
 # Clone MyTardis and MyData repos
-RUN git clone --depth 1 --branch develop \
+RUN git clone --depth 1 --branch chunked-upload \
     https://github.com/mytardis/mytardis.git ./ && \
-    git clone --depth 1 --branch master \
+    git clone --depth 1 --branch chunked-upload \
     https://github.com/mytardis/mytardis-app-mydata.git ./tardis/apps/mydata/
+
+COPY requirements.txt /app/tardis/apps/mydata/
 
 # Install Python packages
 RUN cat requirements-base.txt \
