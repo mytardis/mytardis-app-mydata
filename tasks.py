@@ -75,3 +75,32 @@ def complete_chunked_upload(dfo_id):
         priority=dfo.priority)
 
     return True
+
+
+@tardis_app.task(name="tardis_portal.chunks_cleanup", ignore_result=True)
+def chunks_cleanup():
+    """
+    Find lost chunks (due to incomplete uploads) and cleanup
+    """
+    chunks = Chunk.objects.order_by("dfo_id").values("dfo_id").distinct()
+    cleanup = []
+    for chunk in chunks:
+        dfo = DataFileObject.objects.filter(id=chunk["dfo_id"])
+        if len(dfo) == 0:
+            cleanup.append(chunk["dfo_id"])
+    for dfo_id in cleanup:
+        logger.debug("Cleanup for incomplete upload %s" % dfo_id)
+        chunks = Chunk.objects.filter(dfo_id=dfo_id).order_by("offset")
+        chunk_ids = [chunk.chunk_id for chunk in chunks]
+        if len(chunk_ids) != 0:
+            data_path = os.path.join(settings.CHUNK_STORAGE, str(dfo_id))
+            for chunk_id in chunk_ids:
+                try:
+                    os.remove(os.path.join(data_path, chunk_id))
+                except Exception as e:
+                    pass
+            try:
+                os.rmdir(data_path)
+            except Exception as e:
+                pass
+            chunks.delete()
