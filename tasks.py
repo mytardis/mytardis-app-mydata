@@ -60,12 +60,12 @@ def complete_chunked_upload(dfo_id):
         for chunk_id in chunk_ids:
             try:
                 os.remove(os.path.join(data_path, chunk_id))
-            except Exception as e:
+            except:
                 pass
         # Folder must be empty
         try:
             os.rmdir(data_path)
-        except Exception as e:
+        except:
             pass
 
     # Verify file
@@ -97,10 +97,10 @@ def chunks_cleanup():
             for chunk_id in chunk_ids:
                 try:
                     os.remove(os.path.join(data_path, chunk_id))
-                except Exception as e:
+                except:
                     pass
             try:
                 os.rmdir(data_path)
-            except Exception as e:
+            except:
                 pass
             chunks.delete()
