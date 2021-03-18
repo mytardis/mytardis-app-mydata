@@ -41,6 +41,7 @@ from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
 from tardis.tardis_portal.models.datafile import compute_checksums
 
+from tardis.apps.openid_migration.models import OpenidUserMigration
 from .models.uploader import Uploader
 from .models.uploader import UploaderRegistrationRequest
 from .models.uploader import UploaderSetting
@@ -60,15 +61,10 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, Uploader):
-            if is_facility_manager:
-                return object_list
-            return []
-        if isinstance(bundle.obj, UploaderSetting):
-            if is_facility_manager:
-                return object_list
-            return []
-        if isinstance(bundle.obj, UploaderRegistrationRequest):
+        if isinstance(bundle.obj, Uploader) or \
+           isinstance(bundle.obj, UploaderSetting) or \
+           isinstance(bundle.obj, UploaderRegistrationRequest) or \
+           isinstance(bundle.obj, User):
             if is_facility_manager:
                 return object_list
             return []
@@ -960,3 +956,47 @@ def calc_checksum(algorithm, data):
         checksum = None
 
     return checksum
+
+
+class UserAppResource(tardis.tardis_portal.api.MyTardisModelResource):
+
+    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        resource_name = "user"
+        allowed_methods = ["get"]
+        authorization = ACLAuthorization()
+        filtering = {
+            "username": "exact"
+        }
+        always_return_data = True
+
+    def prepend_urls(self):
+        return [
+            url(
+                r"^(?P<resource_name>%s)%s$" % (
+                self._meta.resource_name, trailing_slash()),
+                self.wrap_view("get_user"),
+                name="api_mydata_get_user"
+            )
+        ]
+
+    def get_user(self, request, **kwargs):
+        self.method_check(request, allowed=["get"])
+        self.is_authenticated(request)
+
+        data = {
+            "success": False
+        }
+
+        username = request.GET.get("username", "")
+        if len(username) != 0:
+            users = User.objects.filter(username=username + "_ldap",
+                                        is_active=False)
+            if len(users) == 1:
+                migrations = OpenidUserMigration.objects.filter(
+                    old_user=users[0])
+                if len(migrations) == 1:
+                    data["success"] = True
+                    data["id"] = migrations[0].new_user.id
+                    data["username"] = migrations[0].new_user.username
+
+        return JsonResponse(data, status=200)
