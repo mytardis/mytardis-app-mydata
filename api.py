@@ -61,8 +61,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, (User, Uploader,
-                                   UploaderSetting,
+        if isinstance(bundle.obj, (User, Uploader, UploaderSetting,
                                    UploaderRegistrationRequest)):
             if is_facility_manager:
                 return object_list
@@ -77,9 +76,7 @@ class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
         authenticated = authuser.is_authenticated
         is_facility_manager = authenticated and \
             len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, Uploader):
-            return is_facility_manager
-        if isinstance(bundle.obj, UploaderRegistrationRequest):
+        if isinstance(bundle.obj, (Uploader, UploaderRegistrationRequest)):
             return is_facility_manager
         if isinstance(bundle.obj, DataFileObject):
             return has_datafile_access(bundle.request, bundle.obj.datafile.id)
