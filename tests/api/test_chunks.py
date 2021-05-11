@@ -125,7 +125,6 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         dfo = DataFileObject.objects.get(id=self.dfo.id)
         self.assertTrue(dfo.verify())
 
-
     @override_settings(CHUNK_MIN_SIZE=1000)
     @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
@@ -150,3 +149,4 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         self.assertFalse(os.path.exists(fname_a))
         self.assertFalse(os.path.exists(fname_b))
         self.assertFalse(os.path.exists(chunks_folder))
+
