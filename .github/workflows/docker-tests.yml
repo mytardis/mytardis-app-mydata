@@ -21,4 +21,4 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: docker-compose run -e CODECOV_TOKEN test
     - name: Run pylint
-      run: docker-compose run test pylint tardis/apps/mydata
+      run: docker-compose run test pylint tardis/apps/mydata --rcfile .pylintrc --django-settings-module=tardis.test_settings tardis

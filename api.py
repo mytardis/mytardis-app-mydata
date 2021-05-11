@@ -27,7 +27,7 @@ from tastypie import fields
 from tastypie.constants import ALL_WITH_RELATIONS
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.utils import trailing_slash
-from ipware.ip import get_ip
+from ipware import get_client_ip
 from dateutil.parser import parse
 
 import tardis.tardis_portal.api
@@ -174,7 +174,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
     def obj_create(self, bundle, **kwargs):
         bundle.data['created_time'] = datetime.now()
         bundle.data['updated_time'] = datetime.now()
-        ip = get_ip(bundle.request)
+        ip, _ = get_client_ip(bundle.request)
         if ip is not None:
             bundle.data['wan_ip_address'] = ip
         bundle = super().obj_create(bundle, **kwargs)
@@ -186,7 +186,7 @@ class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         if hasattr(bundle, "obj_update_done"):
             return bundle
         bundle.data['updated_time'] = datetime.now()
-        ip = get_ip(bundle.request)
+        ip, _ = get_client_ip(bundle.request)
         if ip is not None:
             bundle.data['wan_ip_address'] = ip
         bundle = super().obj_update(bundle, **kwargs)
@@ -526,7 +526,7 @@ class DataFileAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                         requester_key_fingerprint=fingerprint)
                 sbox = uploader_registration_request.approved_storage_box
             else:
-                ip = get_ip(bundle.request)
+                ip, _ = get_client_ip(bundle.request)
                 instrument_id = datafile.dataset.instrument.id
                 uploader = Uploader.objects\
                     .filter(wan_ip_address=ip,
@@ -875,9 +875,9 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         file_path = os.path.join(data_path, chunk_id)
 
         try:
-            file = open(file_path, "wb")
-            file.write(request.body)
-            file.close()
+            with open(file_path, "wb") as file:
+                file.write(request.body)
+                file.close()
         except Exception as e:
             return self.handle_error(str(e))
 

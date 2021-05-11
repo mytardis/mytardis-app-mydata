@@ -26,18 +26,18 @@ def complete_chunked_upload(dfo_id):
         dst_dir = os.path.dirname(dst_path)
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
-        dst = open(dst_path, "wb")
-        for chunk_id in chunk_ids:
-            file_path = os.path.join(data_path, chunk_id)
-            logger.info("Complete file %s chunk %s" % (dfo.id, chunk_id))
-            src = open(file_path, "rb")
-            while True:
-                data = src.read(settings.CHUNK_COPY_SIZE)
-                dst.write(data)
-                if len(data) != settings.CHUNK_COPY_SIZE:
-                    src.close()
-                    break
-        dst.close()
+        with open(dst_path, "wb") as dst:
+            for chunk_id in chunk_ids:
+                file_path = os.path.join(data_path, chunk_id)
+                logger.info("Complete file %s chunk %s" % (dfo.id, chunk_id))
+                with open(file_path, "rb") as src:
+                    while True:
+                        data = src.read(settings.CHUNK_COPY_SIZE)
+                        dst.write(data)
+                        if len(data) != settings.CHUNK_COPY_SIZE:
+                            src.close()
+                            break
+            dst.close()
 
     logger.info("Complete file %s" % dfo_id)
     dfo = DataFileObject.objects.get(id=dfo_id)
@@ -61,12 +61,12 @@ def complete_chunked_upload(dfo_id):
             try:
                 os.remove(os.path.join(data_path, chunk_id))
             except Exception as e:
-                pass
+                logger.error(str(e))
         # Folder must be empty
         try:
             os.rmdir(data_path)
         except Exception as e:
-            pass
+            logger.error(str(e))
 
     # Verify file
     logger.debug("Complete file %s verify" % dfo_id)
@@ -98,9 +98,9 @@ def chunks_cleanup():
                 try:
                     os.remove(os.path.join(data_path, chunk_id))
                 except Exception as e:
-                    pass
+                    logger.error(str(e))
             try:
                 os.rmdir(data_path)
             except Exception as e:
-                pass
+                logger.error(str(e))
             chunks.delete()
