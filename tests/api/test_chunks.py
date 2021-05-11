@@ -149,4 +149,3 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         self.assertFalse(os.path.exists(fname_a))
         self.assertFalse(os.path.exists(fname_b))
         self.assertFalse(os.path.exists(chunks_folder))
-

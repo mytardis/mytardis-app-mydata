@@ -97,10 +97,10 @@ def chunks_cleanup():
             for chunk_id in chunk_ids:
                 try:
                     os.remove(os.path.join(data_path, chunk_id))
-                except:
+                except Exception as e:
                     pass
             try:
                 os.rmdir(data_path)
-            except:
+            except Exception as e:
                 pass
             chunks.delete()
