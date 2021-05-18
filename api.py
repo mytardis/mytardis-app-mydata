@@ -13,6 +13,7 @@ import pytz
 
 from django.conf import settings
 from django.conf.urls import url
+from django.db.models import Sum, Min, Max
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core import mail
@@ -34,11 +35,13 @@ import tardis.tardis_portal.api
 from tardis.tardis_portal.auth.decorators import has_datafile_access
 from tardis.tardis_portal.models.facility import facilities_managed_by
 from tardis.tardis_portal.models.experiment import Experiment
+from tardis.tardis_portal.models.dataset import Dataset
 from tardis.tardis_portal.models.parameters import Schema
 from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
+from tardis.tardis_portal.models.storage import StorageBox
 from tardis.tardis_portal.models.datafile import compute_checksums
 
 from tardis.apps.openid_migration.models import OpenidUserMigration
@@ -994,5 +997,57 @@ class UserAppResource(tardis.tardis_portal.api.MyTardisModelResource):
                     data["success"] = True
                     data["id"] = migrations[0].new_user.id
                     data["username"] = migrations[0].new_user.username
+
+        return JsonResponse(data, status=200)
+
+
+class DatasetAppResource(tardis.tardis_portal.api.MyTardisModelResource):
+
+    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
+        resource_name = "dataset_stats"
+        allowed_methods = ["get"]
+        authorization = ACLAuthorization()
+        queryset = Dataset.objects.all()
+        filtering = {
+            "dataset_id": ["exact"]
+        }
+        always_return_data = True
+
+    def prepend_urls(self):
+        return [
+            url(
+                r"^(?P<resource_name>%s)/(?P<dataset_id>\d+)%s$" % (
+                self._meta.resource_name, trailing_slash()),
+                self.wrap_view("get_dataset_stats"),
+                name="api_mydata_get_dataset_stats"
+            )
+        ]
+
+    def get_dataset_stats(self, request, **kwargs):
+        self.method_check(request, allowed=["get"])
+        self.is_authenticated(request)
+
+        data = {
+            "success": False
+        }
+
+        try:
+            dataset = Dataset.objects.get(id=kwargs["dataset_id"])
+            files_total = DataFile.objects.filter(dataset=dataset).count()
+            files_verified = DataFile.objects.filter(dataset=dataset).filter(file_objects__verified=True).count()
+            storage_boxes = [sb["storage_box_id"] for sb in DataFileObject.objects.filter(datafile__dataset=dataset).values("storage_box_id").distinct()]
+            data = {
+                "success": True,
+                "files": {
+                    "total": files_total,
+                    "verified": files_verified
+                },
+                "verified": files_total > 0 and files_verified == files_total,
+                "size": DataFile.objects.filter(dataset=dataset).aggregate(Sum("size"))["size__sum"],
+                "location": ",".join([sb.name for sb in StorageBox.objects.filter(id__in=storage_boxes)]),
+                "last_verified": DataFileObject.objects.filter(datafile__dataset=dataset).aggregate(Max("last_verified_time"))["last_verified_time__max"]
+            }
+        except:
+            pass
 
         return JsonResponse(data, status=200)
