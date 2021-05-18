@@ -5,15 +5,12 @@ Additions to MyTardis's REST API
 import json
 import logging
 import os
-import math
 import traceback
 from datetime import datetime
-import re
 import pytz
 
 from django.conf import settings
 from django.conf.urls import url
-from django.db.models import Sum, Min, Max
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core import mail
@@ -21,7 +18,7 @@ from django.core.files.storage import FileSystemStorage, get_storage_class
 from django.core.mail import get_connection
 from django.db.utils import DatabaseError
 from django.db import IntegrityError
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.urls import resolve
 from django.utils.timezone import is_aware, make_aware
 from tastypie import fields
@@ -32,87 +29,25 @@ from ipware import get_client_ip
 from dateutil.parser import parse
 
 import tardis.tardis_portal.api
-from tardis.tardis_portal.auth.decorators import has_datafile_access
-from tardis.tardis_portal.models.facility import facilities_managed_by
 from tardis.tardis_portal.models.experiment import Experiment
-from tardis.tardis_portal.models.dataset import Dataset
 from tardis.tardis_portal.models.parameters import Schema
 from tardis.tardis_portal.models.parameters import ExperimentParameter
 from tardis.tardis_portal.models.parameters import ExperimentParameterSet
 from tardis.tardis_portal.models.datafile import DataFile
 from tardis.tardis_portal.models.datafile import DataFileObject
-from tardis.tardis_portal.models.storage import StorageBox
 from tardis.tardis_portal.models.datafile import compute_checksums
 
-from tardis.apps.openid_migration.models import OpenidUserMigration
 from .models.uploader import Uploader
 from .models.uploader import UploaderRegistrationRequest
 from .models.uploader import UploaderSetting
-from .models.chunk import Chunk
 
-from . import tasks
+from .resources.auth import ACLAuthorization
+from .resources.upload import UploadAppResource  # pylint: disable=unused-import
+from .resources.user import UserAppResource  # pylint: disable=unused-import
+from .resources.stats import DatasetAppResource  # pylint: disable=unused-import
 
 
 logger = logging.getLogger(__name__)
-
-
-class ACLAuthorization(tardis.tardis_portal.api.ACLAuthorization):
-    '''Authorisation class for Tastypie.
-    '''
-    def read_list(self, object_list, bundle):  # noqa # too complex
-        authuser = bundle.request.user
-        authenticated = authuser.is_authenticated
-        is_facility_manager = authenticated and \
-            len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, (User, Uploader, UploaderSetting,
-                                   UploaderRegistrationRequest)):
-            if is_facility_manager:
-                return object_list
-            return []
-        return super().read_list(object_list, bundle)
-
-    def read_detail(self, object_list, bundle):  # noqa # too complex
-        if bundle.request.user.is_authenticated and \
-           bundle.request.user.is_superuser:
-            return True
-        authuser = bundle.request.user
-        authenticated = authuser.is_authenticated
-        is_facility_manager = authenticated and \
-            len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, (Uploader, UploaderRegistrationRequest)):
-            return is_facility_manager
-        if isinstance(bundle.obj, DataFileObject):
-            return has_datafile_access(bundle.request, bundle.obj.datafile.id)
-        return super().read_detail(object_list, bundle)
-
-    def create_detail(self, object_list, bundle):
-        authuser = bundle.request.user
-        authenticated = authuser.is_authenticated
-        is_facility_manager = authenticated and \
-            len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, Uploader):
-            return is_facility_manager
-        if isinstance(bundle.obj, UploaderRegistrationRequest):
-            return is_facility_manager
-        if isinstance(bundle.obj, UploaderSetting):
-            return is_facility_manager
-        return super().create_detail(object_list, bundle)
-
-    def update_detail(self, object_list, bundle):
-        '''
-        Uploaders should only be able to update the uploader record whose
-        UUID matches theirs (if it exists).
-        '''
-        authuser = bundle.request.user
-        authenticated = authuser.is_authenticated
-        is_facility_manager = authenticated and \
-            len(facilities_managed_by(authuser)) > 0
-        if isinstance(bundle.obj, Uploader):
-            return is_facility_manager and \
-                bundle.data['uuid'] == bundle.obj.uuid
-        if isinstance(bundle.obj, UploaderSetting):
-            return is_facility_manager
-        return super().update_detail(object_list, bundle)
 
 
 class UploaderAppResource(tardis.tardis_portal.api.MyTardisModelResource):
@@ -707,347 +642,3 @@ class ReplicaAppResource(tardis.tardis_portal.api.ReplicaResource):
             file_object_size = None
         bundle.data['size'] = file_object_size
         return bundle
-
-
-class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
-    """
-    Provide chunked upload for data file
-    https://docs.google.com/document/d/1wZDwReW8LyplHJiUuH3QTzNguODX6mU2-8J6XN7PzZk/edit
-    """
-
-    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
-        resource_name = "upload"
-        allowed_methods = ["get", "put", "post"]
-        authorization = ACLAuthorization()
-        queryset = Chunk.objects.all()
-        filtering = {
-            "dfo_id": ["exact"]
-        }
-        always_return_data = True
-
-    def prepend_urls(self):
-        return [
-            url(
-                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)%s$" % (
-                self._meta.resource_name, trailing_slash()),
-                self.wrap_view("get_chunks"),
-                name="api_mydata_get_chunks"
-            ),
-            url(
-                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/upload%s$" % (
-                self._meta.resource_name, trailing_slash()),
-                self.wrap_view("upload_chunk"),
-                name="api_mydata_upload_chunk"
-            ),
-            url(
-                r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/complete%s$" % (
-                self._meta.resource_name, trailing_slash()),
-                self.wrap_view("complete_upload"),
-                name="api_mydata_complete_upload"
-            ),
-        ]
-
-    def check_dfo(self, request, dfo_id):
-        try:
-            dfo = DataFileObject.objects.get(id=dfo_id)
-            return any(
-                request.user.has_perm("tardis_acls.change_experiment", experiment)
-                for experiment in dfo.datafile.dataset.experiments.all())
-        except:
-            pass
-
-        return None
-
-    def handle_error(self, message):
-        """
-        Return error message in JSON format
-        """
-        data = {
-            "success": False,
-            "error": message
-        }
-
-        return JsonResponse(data, status=200)
-
-    def get_chunk_size(self, file_size):
-        """
-        Calculate chunk size based on data file size
-        """
-        chunk_size = settings.CHUNK_MIN_SIZE
-        while True:
-            count_chunks = math.ceil(file_size/chunk_size)
-            if count_chunks < 100:
-                return chunk_size
-            chunk_size += settings.CHUNK_MIN_SIZE
-            if chunk_size > settings.CHUNK_MAX_SIZE:
-                return settings.CHUNK_MAX_SIZE
-
-    def get_chunks(self, request, **kwargs):
-        """
-        Get status of data file upload
-        """
-        self.method_check(request, allowed=["get"])
-        self.is_authenticated(request)
-
-        if not self.check_dfo(request, kwargs["dfo_id"]):
-            return self.handle_error("Invalid object or access denied.")
-
-        dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
-        file_size = dfo.datafile.size
-
-        data = {
-            "success": True,
-            "completed": True
-        }
-
-        if not dfo.verified:
-
-            try:
-                # Check for uploaded chunks
-                last_chunk = Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("-offset")[0]
-                offset = min(last_chunk.offset + last_chunk.size, file_size)
-            except:
-                offset = 0
-
-            if offset != file_size:
-                data["completed"] = False
-                data["offset"] = offset
-                data["size"] = self.get_chunk_size(file_size)
-                data["checksum"] = settings.CHUNK_CHECKSUM
-
-        return JsonResponse(data, status=200)
-
-    def upload_chunk(self, request, **kwargs):
-        """
-        Upload chunk of data file
-        """
-        import uuid
-
-        self.method_check(request, allowed=["post"])
-        self.is_authenticated(request)
-
-        if not self.check_dfo(request, kwargs["dfo_id"]):
-            return self.handle_error("Invalid object or access denied.")
-
-        checksum = request.headers.get("Checksum", None)
-        if checksum is None:
-            checksum = request.META.get("Checksum", None)
-            if checksum is None:
-                return self.handle_error("Missing 'Checksum' in header.")
-
-        content_range = request.headers.get("Content-Range", None)
-        if content_range is None:
-            content_range = request.META.get("Content-Range", None)
-            if content_range is None:
-                return self.handle_error("Missing 'Content-Range' in header.")
-
-        m = re.search(r"^(\d+)\-(\d+)\/(\d+)$", content_range).groups()
-        content_start = int(m[0])
-        content_end = int(m[1])
-        content_length = content_end-content_start
-        if content_length > settings.CHUNK_MAX_SIZE:
-            return self.handle_error("Chunk size is larger than max allowed.")
-
-        check = Chunk.objects.filter(
-            dfo_id=kwargs["dfo_id"],
-            offset=content_start
-        )
-        if len(check) != 0:
-            return self.handle_error("Chunk already uploaded.")
-
-        content_checksum = calc_checksum(settings.CHUNK_CHECKSUM, request.body)
-        if content_checksum is None or content_checksum != checksum:
-            return self.handle_error(
-                "Checksum does not match. {}:{}".format(settings.CHUNK_CHECKSUM, content_checksum))
-
-        if not os.path.exists(settings.CHUNK_STORAGE):
-            try:
-                os.mkdir(settings.CHUNK_STORAGE)
-            except Exception as e:
-                return self.handle_error(str(e))
-
-        data_path = os.path.join(settings.CHUNK_STORAGE, kwargs["dfo_id"])
-        if not os.path.exists(data_path):
-            try:
-                os.makedirs(data_path, mode=0o770, exist_ok=True)
-                os.chmod(data_path, 0o770)
-            except Exception as e:
-                return self.handle_error(str(e))
-
-        chunk_id = str(uuid.uuid4())
-        file_path = os.path.join(data_path, chunk_id)
-
-        try:
-            with open(file_path, "wb") as file:
-                file.write(request.body)
-                file.close()
-        except Exception as e:
-            return self.handle_error(str(e))
-
-        dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
-
-        instrument = dfo.datafile.dataset.instrument
-        if instrument is not None:
-            instrument_id = instrument.id
-        else:
-            instrument_id = None
-
-        try:
-            chunk = Chunk.objects.create(
-                chunk_id=chunk_id,
-                dfo_id=kwargs["dfo_id"],
-                offset=content_start,
-                size=content_length,
-                instrument_id=instrument_id,
-                user_id=request.user.id
-            )
-        except Exception as e:
-            try:
-                os.remove(file_path)
-            except Exception as e:
-                pass
-            return self.handle_error(str(e))
-
-        data = {
-            "success": True,
-            "id": chunk.id
-        }
-
-        return JsonResponse(data, status=200)
-
-    def complete_upload(self, request, **kwargs):
-        """
-        Complete upload and create full file
-        """
-
-        self.method_check(request, allowed=["get"])
-        self.is_authenticated(request)
-
-        if not self.check_dfo(request, kwargs["dfo_id"]):
-            return self.handle_error("Invalid object or access denied.")
-
-        dfo = DataFileObject.objects.get(id=kwargs["dfo_id"])
-
-        if not dfo.verified:
-            # Async task as we can't wait until file is ready
-            tasks.complete_chunked_upload.apply_async(args=[dfo.id])
-
-        data = {
-            "success": True,
-            "verified": dfo.verified
-        }
-
-        return JsonResponse(data, status=200)
-
-
-def calc_checksum(algorithm, data):
-    """
-    Calculate checksum for a binary data
-    """
-    import hashlib
-    import xxhash
-
-    if algorithm == "xxh3_64":
-        checksum = xxhash.xxh3_64(data).hexdigest()
-    elif algorithm == "md5":
-        checksum = hashlib.md5(data).hexdigest()
-    else:
-        checksum = None
-
-    return checksum
-
-
-class UserAppResource(tardis.tardis_portal.api.MyTardisModelResource):
-
-    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
-        resource_name = "user"
-        allowed_methods = ["get"]
-        authorization = ACLAuthorization()
-        filtering = {
-            "username": "exact"
-        }
-        always_return_data = True
-
-    def prepend_urls(self):
-        return [
-            url(
-                r"^(?P<resource_name>%s)%s$" % (
-                self._meta.resource_name, trailing_slash()),
-                self.wrap_view("get_user"),
-                name="api_mydata_get_user"
-            )
-        ]
-
-    def get_user(self, request, **kwargs):
-        self.method_check(request, allowed=["get"])
-        self.is_authenticated(request)
-
-        data = {
-            "success": False
-        }
-
-        username = request.GET.get("username", "")
-        if len(username) != 0:
-            users = User.objects.filter(username=username + "_ldap",
-                                        is_active=False)
-            if len(users) == 1:
-                migrations = OpenidUserMigration.objects.filter(
-                    old_user=users[0])
-                if len(migrations) == 1:
-                    data["success"] = True
-                    data["id"] = migrations[0].new_user.id
-                    data["username"] = migrations[0].new_user.username
-
-        return JsonResponse(data, status=200)
-
-
-class DatasetAppResource(tardis.tardis_portal.api.MyTardisModelResource):
-
-    class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
-        resource_name = "dataset_stats"
-        allowed_methods = ["get"]
-        authorization = ACLAuthorization()
-        queryset = Dataset.objects.all()
-        filtering = {
-            "dataset_id": ["exact"]
-        }
-        always_return_data = True
-
-    def prepend_urls(self):
-        return [
-            url(
-                r"^(?P<resource_name>%s)/(?P<dataset_id>\d+)%s$" % (
-                self._meta.resource_name, trailing_slash()),
-                self.wrap_view("get_dataset_stats"),
-                name="api_mydata_get_dataset_stats"
-            )
-        ]
-
-    def get_dataset_stats(self, request, **kwargs):
-        self.method_check(request, allowed=["get"])
-        self.is_authenticated(request)
-
-        data = {
-            "success": False
-        }
-
-        try:
-            dataset = Dataset.objects.get(id=kwargs["dataset_id"])
-            files_total = DataFile.objects.filter(dataset=dataset).count()
-            files_verified = DataFile.objects.filter(dataset=dataset).filter(file_objects__verified=True).count()
-            storage_boxes = [sb["storage_box_id"] for sb in DataFileObject.objects.filter(datafile__dataset=dataset).values("storage_box_id").distinct()]
-            data = {
-                "success": True,
-                "files": {
-                    "total": files_total,
-                    "verified": files_verified
-                },
-                "verified": files_total > 0 and files_verified == files_total,
-                "size": DataFile.objects.filter(dataset=dataset).aggregate(Sum("size"))["size__sum"],
-                "location": ",".join([sb.name for sb in StorageBox.objects.filter(id__in=storage_boxes)]),
-                "last_verified": DataFileObject.objects.filter(datafile__dataset=dataset).aggregate(Max("last_verified_time"))["last_verified_time__max"]
-            }
-        except:
-            pass
-
-        return JsonResponse(data, status=200)
