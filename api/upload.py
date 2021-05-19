@@ -43,19 +43,25 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         return [
             url(
                 r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)%s$" % (
-                self._meta.resource_name, trailing_slash()),
+                    self._meta.resource_name,
+                    trailing_slash()
+                ),
                 self.wrap_view("get_chunks"),
                 name="api_mydata_get_chunks"
             ),
             url(
                 r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/upload%s$" % (
-                self._meta.resource_name, trailing_slash()),
+                    self._meta.resource_name,
+                    trailing_slash()
+                ),
                 self.wrap_view("upload_chunk"),
                 name="api_mydata_upload_chunk"
             ),
             url(
                 r"^(?P<resource_name>%s)/(?P<dfo_id>\d+)/complete%s$" % (
-                self._meta.resource_name, trailing_slash()),
+                    self._meta.resource_name,
+                    trailing_slash()
+                ),
                 self.wrap_view("complete_upload"),
                 name="api_mydata_complete_upload"
             ),
@@ -65,9 +71,11 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         try:
             dfo = DataFileObject.objects.get(id=dfo_id)
             return any(
-                request.user.has_perm("tardis_acls.change_experiment", experiment)
-                for experiment in dfo.datafile.dataset.experiments.all())
-        except:
+                request.user.has_perm(
+                    "tardis_acls.change_experiment",
+                    experiment
+                ) for experiment in dfo.datafile.dataset.experiments.all())
+        except Exception:
             pass
 
         return None
@@ -118,9 +126,11 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
             try:
                 # Check for uploaded chunks
-                last_chunk = Chunk.objects.filter(dfo_id=kwargs["dfo_id"]).order_by("-offset")[0]
+                last_chunk = Chunk.objects.filter(
+                    dfo_id=kwargs["dfo_id"]
+                ).order_by("-offset")[0]
                 offset = min(last_chunk.offset + last_chunk.size, file_size)
-            except:
+            except Exception:
                 offset = 0
 
             if offset != file_size:
@@ -169,10 +179,16 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         if len(check) != 0:
             return self.handle_error("Chunk already uploaded.")
 
-        content_checksum = utils.calc_checksum(settings.CHUNK_CHECKSUM, request.body)
+        content_checksum = utils.calc_checksum(
+            settings.CHUNK_CHECKSUM,
+            request.body
+        )
         if content_checksum is None or content_checksum != checksum:
             return self.handle_error(
-                "Checksum does not match. {}:{}".format(settings.CHUNK_CHECKSUM, content_checksum))
+                "Checksum does not match. {}:{}".format(
+                    settings.CHUNK_CHECKSUM,
+                    content_checksum
+                ))
 
         if not os.path.exists(settings.CHUNK_STORAGE):
             try:
@@ -218,7 +234,7 @@ class UploadAppResource(tardis.tardis_portal.api.MyTardisModelResource):
         except Exception as e:
             try:
                 os.remove(file_path)
-            except Exception as e:
+            except Exception:
                 pass
             return self.handle_error(str(e))
 
