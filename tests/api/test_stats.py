@@ -22,7 +22,7 @@ class DatasetStatsAppResourceTest(MyTardisResourceTestCase):
             self.size += size
             df = DataFile(
                 dataset=self.dataset,
-                filename="%s.txt" % id,
+                filename="%s-%s.txt" % (str(i), id),
                 md5sum="c858d6319609d6db3c091b09783c479c",
                 size=size)
             df.save()
