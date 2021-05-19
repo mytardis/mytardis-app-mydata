@@ -18,7 +18,7 @@ from .auth import ACLAuthorization
 logger = logging.getLogger(__name__)
 
 
-class DatasetAppResource(tardis.tardis_portal.api.MyTardisModelResource):
+class DatasetStatsAppResource(tardis.tardis_portal.api.MyTardisModelResource):
 
     class Meta(tardis.tardis_portal.api.MyTardisModelResource.Meta):
         resource_name = "dataset_stats"

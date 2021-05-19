@@ -13,4 +13,4 @@ from .datafile import (
 from .experiment import ExperimentAppResource
 from .upload import UploadAppResource
 from .user import UserAppResource
-from .stats import DatasetAppResource
+from .stats import DatasetStatsAppResource
