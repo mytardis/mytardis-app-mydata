@@ -1,6 +1,4 @@
 import json
-import uuid
-from random import randint
 
 from django.contrib.auth.models import User
 from django.test.client import Client
