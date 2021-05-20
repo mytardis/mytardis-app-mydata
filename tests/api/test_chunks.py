@@ -20,11 +20,13 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         self.chunks = [{
             "name": "xaa.bin",
             "range": "0-1000/1553",
-            "md5sum": "1302ac5df76a7c3fb420cdf7f660049a"
+            "md5sum": "1302ac5df76a7c3fb420cdf7f660049a",
+            "xxh64sum": "08236ebaa99378c3"
         }, {
             "name": "xab.bin",
             "range": "1000-1553/1553",
-            "md5sum": "6778a50e7d952264d0cadf8500e53559"
+            "md5sum": "6778a50e7d952264d0cadf8500e53559",
+            "xxh64sum": "a48e63b068c09d58"
         }]
         self.df = DataFile(
             dataset=self.dataset,
@@ -53,11 +55,11 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
             pass
         super().tearDown()
 
-    def upload_chunk(self, pos):
+    def upload_chunk(self, pos, chksum="md5sum"):
         chunk = self.chunks[pos]
         fname = os.path.join(self.fixtures_path, chunk["name"])
         headers = {
-            "Checksum": chunk["md5sum"],
+            "Checksum": chunk[chksum],
             "Content-Range": chunk["range"]
         }
         with open(fname, "rb") as f:
@@ -99,8 +101,20 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
     @override_settings(CHUNK_MAX_SIZE=1000)
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
-    def test_upload_chunk(self):
+    def test_upload_chunk_md5(self):
         response = self.upload_chunk(0)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        for k in ["success", "id"]:
+            self.assertIn(k, data)
+        self.assertTrue(data["success"])
+
+    @override_settings(CHUNK_MIN_SIZE=1000)
+    @override_settings(CHUNK_MAX_SIZE=1000)
+    @override_settings(CHUNK_CHECKSUM="xxh3_64")
+    @override_settings(CHUNK_STORAGE="/tmp")
+    def test_upload_chunk_xxh3_64(self):
+        response = self.upload_chunk(0, "xxh64sum")
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         for k in ["success", "id"]:
