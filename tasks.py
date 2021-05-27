@@ -104,3 +104,19 @@ def chunks_cleanup():
             except Exception as e:
                 logger.error(str(e))
             chunks.delete()
+
+
+@tardis_app.task(name="tardis_portal.chunks_complete", ignore_result=True)
+def chunks_complete():
+    """
+    Find and try to complete uploads not processed straight after upload
+    """
+    chunks = Chunk.objects.order_by("dfo_id").values("dfo_id").distinct()
+    for chunk in chunks:
+        dfo = DataFileObject.objects.get(id=chunk["dfo_id"])
+        last_chunk = Chunk.objects.filter(
+            dfo_id=dfo.id
+        ).order_by("-offset")[0]
+        offset = min(last_chunk.offset + last_chunk.size, dfo.datafile.size)
+        if offset == dfo.datafile.size:
+            complete_chunked_upload.apply_async(args=[dfo.id])
