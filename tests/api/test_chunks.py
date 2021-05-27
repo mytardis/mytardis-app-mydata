@@ -7,7 +7,7 @@ from django.test.client import Client
 from tardis.tardis_portal.models.storage import StorageBox
 from tardis.tardis_portal.models.datafile import DataFile, DataFileObject
 from ...models.chunk import Chunk
-from ...tasks import chunks_cleanup
+from ...tasks import chunks_cleanup, chunks_complete
 
 from . import MyTardisResourceTestCase
 
@@ -163,3 +163,27 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
         self.assertFalse(os.path.exists(fname_a))
         self.assertFalse(os.path.exists(fname_b))
         self.assertFalse(os.path.exists(chunks_folder))
+
+    @override_settings(CHUNK_MIN_SIZE=1000)
+    @override_settings(CHUNK_MAX_SIZE=1000)
+    @override_settings(CHUNK_CHECKSUM="md5")
+    @override_settings(CHUNK_STORAGE="/tmp")
+    @override_settings(CHUNK_COPY_SIZE=250)
+    def test_complete_task(self):
+        chunks_folder = os.path.join("/tmp", str(self.dfo.id))
+        response = self.upload_chunk(0)
+        data = json.loads(response.content)
+        chunk_a = Chunk.objects.get(id=data["id"])
+        fname_a = os.path.join("/tmp", str(self.dfo.id), str(chunk_a.chunk_id))
+        response = self.upload_chunk(1)
+        data = json.loads(response.content)
+        chunk_b = Chunk.objects.get(id=data["id"])
+        fname_b = os.path.join("/tmp", str(self.dfo.id), str(chunk_b.chunk_id))
+        self.assertTrue(os.path.exists(fname_a))
+        self.assertTrue(os.path.exists(fname_b))
+        chunks_complete.apply_async()
+        self.assertFalse(os.path.exists(fname_a))
+        self.assertFalse(os.path.exists(fname_b))
+        self.assertFalse(os.path.exists(chunks_folder))
+        dfo = DataFileObject.objects.get(id=self.dfo.id)
+        self.assertTrue(dfo.verified)
