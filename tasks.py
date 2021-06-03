@@ -22,6 +22,10 @@ def complete_chunked_upload(dfo_id):
         """
         Reassembly file from chunks
         """
+        for chunk_id in chunk_ids:
+            file_path = os.path.join(data_path, chunk_id)
+            if not os.path.exists(file_path):
+                raise Exception("Missing chunk file %s" % file_path)
         dst_path = dfo.get_full_path()
         dst_dir = os.path.dirname(dst_path)
         if not os.path.exists(dst_dir):
