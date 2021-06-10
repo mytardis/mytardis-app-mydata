@@ -40,7 +40,7 @@ def complete_chunked_upload(dfo_id):
         if os.path.exists(dst_path):
             file_size = os.stat(dst_path).st_size
             chunks_offset = max(math.ceil(file_size/chunk_size) - 1, 0)
-            dst = open(dst_path, "w+b")  # pylint: disable=consider-using-with
+            dst = open(dst_path, "rb+")  # pylint: disable=consider-using-with
             dst.seek(chunks_offset * chunk_size)
         else:
             # Make new file
@@ -55,7 +55,6 @@ def complete_chunked_upload(dfo_id):
                     data = src.read(settings.CHUNK_COPY_SIZE)
                     dst.write(data)
                     if len(data) != settings.CHUNK_COPY_SIZE:
-                        src.close()
                         break
 
         # Close the file
