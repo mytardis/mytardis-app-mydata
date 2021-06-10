@@ -146,4 +146,4 @@ def chunks_complete():
                 last_chunk.offset+last_chunk.size,
                 dfo[0].datafile.size)
             if offset == dfo[0].datafile.size:
-                complete_chunked_upload.apply_async(args=[dfo.id])
+                complete_chunked_upload.apply_async(args=[dfo[0].id])
