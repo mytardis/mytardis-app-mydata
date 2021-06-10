@@ -40,12 +40,12 @@ def complete_chunked_upload(dfo_id):
         if os.path.exists(dst_path):
             file_size = os.stat(dst_path).st_size
             chunks_offset = max(math.ceil(file_size/chunk_size) - 1, 0)
-            dst = open(dst_path, "w+b")
+            dst = open(dst_path, "w+b")  # pylint: disable=consider-using-with
             dst.seek(chunks_offset * chunk_size)
         else:
             # Make new file
             chunks_offset = 0
-            dst = open(dst_path, "wb")
+            dst = open(dst_path, "wb")  # pylint: disable=consider-using-with
 
         for chunk_id in chunk_ids[chunks_offset:]:
             file_path = os.path.join(data_path, chunk_id)

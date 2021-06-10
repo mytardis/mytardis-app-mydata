@@ -1,5 +1,5 @@
 # Used for CI testing in .github/workflows/docker-tests.yml
-FROM ubuntu:18.04 AS build
+FROM ubuntu:20.04 AS build
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PYTHONUNBUFFERED 1
