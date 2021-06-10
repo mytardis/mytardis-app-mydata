@@ -27,19 +27,27 @@ def complete_chunked_upload(dfo_id):
             file_path = os.path.join(data_path, chunk_id)
             if not os.path.exists(file_path):
                 raise Exception("Missing chunk file %s" % file_path)
+
         dst_path = dfo.get_full_path()
         dst_dir = os.path.dirname(dst_path)
+
+        # Make new folder
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
+
+        # If destination file already exists,
+        # open file and seek to the last offset
         if os.path.exists(dst_path):
             file_size = os.stat(dst_path).st_size
-            file_offset = max(math.ceil(file_size/chunk_size)-1, 0) * chunk_size
-            dst = open(dst_path, "r+b")
-            dst.seek(file_offset)
+            chunks_offset = max(math.ceil(file_size/chunk_size) - 1, 0)
+            dst = open(dst_path, "w+b")
+            dst.seek(chunks_offset * chunk_size)
         else:
+            # Make new file
+            chunks_offset = 0
             dst = open(dst_path, "wb")
 
-        for chunk_id in chunk_ids:
+        for chunk_id in chunk_ids[chunks_offset:]:
             file_path = os.path.join(data_path, chunk_id)
             logger.info("Complete file %s chunk %s" % (dfo.id, chunk_id))
             with open(file_path, "rb") as src:
@@ -49,6 +57,8 @@ def complete_chunked_upload(dfo_id):
                     if len(data) != settings.CHUNK_COPY_SIZE:
                         src.close()
                         break
+
+        # Close the file
         dst.close()
 
     logger.info("Complete file %s" % dfo_id)
