@@ -127,7 +127,7 @@ def chunks_cleanup():
     for upload in uploads:
         dfo = DataFileObject.objects.filter(id=upload["dfo_id"])
         if len(dfo) == 0:
-            remove_chunked_upload.apply_async(dfo[0].id)
+            remove_chunked_upload.apply_async(args=[upload["dfo_id"]])
 
 
 @tardis_app.task(name="tardis_portal.chunks_complete", ignore_result=True)
