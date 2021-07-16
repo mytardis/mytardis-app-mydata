@@ -144,6 +144,33 @@ class UploadAppResourceTest(MyTardisResourceTestCase):
     @override_settings(CHUNK_CHECKSUM="md5")
     @override_settings(CHUNK_STORAGE="/tmp")
     @override_settings(CHUNK_COPY_SIZE=250)
+    def test_complete_upload_existing(self):
+        self.upload_chunk(0)
+        self.upload_chunk(1)
+        dst_path = self.dfo.get_full_path()
+        dst_dir = os.path.dirname(dst_path)
+        os.makedirs(dst_dir)
+        with open(dst_path, "wb") as dst:
+            for i, size in enumerate([1000, 133]):
+                chunk = self.chunks[i]
+                filename = os.path.join(self.fixtures_path, chunk["name"])
+                with open(filename, "rb") as src:
+                    dst.write(src.read(size))
+        response = self.api_client.get(
+            "/api/v1/mydata_upload/%s/complete/" % self.dfo.id,
+            authentication=self.get_credentials())
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertIn("success", data)
+        self.assertTrue(data["success"])
+        dfo = DataFileObject.objects.get(id=self.dfo.id)
+        self.assertTrue(dfo.verify())
+
+    @override_settings(CHUNK_MIN_SIZE=1000)
+    @override_settings(CHUNK_MAX_SIZE=1000)
+    @override_settings(CHUNK_CHECKSUM="md5")
+    @override_settings(CHUNK_STORAGE="/tmp")
+    @override_settings(CHUNK_COPY_SIZE=250)
     def test_cleanup_task(self):
         chunks_folder = os.path.join("/tmp", str(self.dfo.id))
         response = self.upload_chunk(0)
